@@ -1,0 +1,77 @@
+x-base: &BASE
+  build: .
+  links:
+    - "db:postgres"
+    - "rabbitmq:rabbitmq"
+  volumes:
+    - ".:/app:rw"
+    - "./.data:/data:rw"
+    - "./.data/artifacts:/artifacts:rw"
+    - "./.data/staticfiles:/staticfiles:rw"
+  env_file:
+    - .env-local
+    - .env-secrets
+
+services:
+  web:
+    <<: *BASE
+    command: gunicorn --timeout=86400 --bind=0.0.0.0:80 --reload --workers=1 bmcc.wsgi:application
+    environment:
+      VIRTUAL_HOST: bmcc.local.aldryn.net
+
+  test:
+    <<: *BASE
+    command: pytest ./bmcc
+    env_file:
+      - .env-local
+      - .env-secrets
+      - .env-testing
+
+  worker:
+    <<: *BASE
+    command: celery -A bmcc.celery.worker worker
+
+  beat:
+    <<: *BASE
+    command: celery -A bmcc.celery.worker beat
+
+  rabbitmq:
+    image: rabbitmq:4.2-alpine
+    hostname: rabbitmq
+    expose:
+      - "15672"
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "sJJqrMsriiDxseYUaifAsH02kEvYrI9U1qALYZHoKgMIxBYjEDPtv0Gp4X9AR88kq4M9WZTnBPoxkTQ3"
+
+  db:
+    image: ghcr.io/baosystems/postgis:15-3.5
+    environment:
+      POSTGRES_DB: "db"
+      POSTGRES_HOST_AUTH_METHOD: "trust"
+      SERVICE_MANAGER: "fsm-postgres"
+    volumes:
+      - ".:/app:rw"
+      - 'postgres:/var/lib/postgresql/data'
+
+  deps:
+    build:
+      context: .
+      target: builder
+      secrets:
+        - netrc
+    volumes:
+      - '~/.netrc:/root/.netrc:ro'
+      - '.:/app'
+    working_dir: /app
+    command: bash -c 'pip install -U pip pip-tools && pip-compile --resolver=backtracking --upgrade -o requirements.txt'
+    profiles:
+      - donotstart
+
+networks:
+  default:
+    name: divio-local-lb
+    external: true
+
+secrets:
+  netrc:
+    file: ${HOME}/.netrc

@@ -1,0 +1,85 @@
+[project]
+name = "ballooning-mission-control-center"
+version = "0.1.0"
+description = "Mission control center to manage ballooing missions at MIT."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "attrs>=25.4.0",
+    "boto3>=1.41.2",
+    "celery>=5.5.3",
+    "dj-database-url>=3.0.1",
+    "dj-email-url>=1.0.6",
+    "django>=5,<6",
+    "django-admin-autocomplete-filter>=0.7.1",
+    "django-adminutils>=0.0.28",
+    "django-cache-url>=3.4.5",
+    "django-celery-results>=2.6.0",
+    "django-click>=2.4.1",
+    "django-import-export>=4.3.14",
+    "django-object-actions>=5.0.0",
+    "django-pgtrigger>=4.15.4",
+    "django-storage-url>=0.12.1",
+    "psycopg2-binary>=2.9.11",
+    "sentry-sdk>=2.45.0",
+    "unicode-slugify>=0.1.5",
+    "uvicorn>=0.38.0",
+    "whitenoise>=6.11.0",
+]
+
+[dependency-groups]
+dev = [
+    "faker>=38.2.0",
+    "ipdb>=0.13.13",
+    "ipython>=9.7.0",
+    "pytest>=9.0.1",
+    "pytest-celery>=1.2.1",
+    "pytest-cov>=7.0.0",
+    "pytest-django>=4.11.1",
+]
+
+[tool.ruff]
+extend = "/presets/ruff.toml"
+line-length=79
+ignore = ["S101"]
+
+[tool.pytest]
+addopts = "--reuse-db --cov-config setup.cfg --pdbcls IPython.core.debugger:Pdb --rootdir /app"
+markers = ["integration"]
+cache_dir = "/artifacts/pytest-cache"
+
+[tool.coverage.run]
+branch = true
+omit = [
+    "*/migrations/*",
+]
+source = "."
+data_file = "/artifacts/coverage"
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+    # Have to re-enable the standard pragma
+    "pragma: no cover",
+    "NOCOV",
+
+    # Don't complain if non-runnable code isn't run:
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
+precision = 2
+
+[tool.coverage.html]
+directory = "/artifacts/htmlcov"
+
+[tool.coverage.xml]
+output = "/artifacts/coverage.xml"
+
+[tool.isort]
+# skip_glob=*/baseproject/test/data/**
+default_section = "THIRDPARTY"
+known_django = "django"
+known_project = "bmcc"
+sections = "FUTURE,STDLIB,DJANGO,DRF,THIRDPARTY,FIRSTPARTY,PROJECT,LOCALFOLDER"
+
