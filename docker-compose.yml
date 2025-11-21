@@ -15,7 +15,7 @@ x-base: &BASE
 services:
   web:
     <<: *BASE
-    command: gunicorn --timeout=86400 --bind=0.0.0.0:80 --reload --workers=1 bmcc.wsgi:application
+    command: uvicorn --host=0.0.0.0 --lifespan=off --port=80 --reload bmcc.asgi:application
     environment:
       VIRTUAL_HOST: bmcc.local.aldryn.net
 
@@ -63,6 +63,7 @@ services:
       - '~/.netrc:/root/.netrc:ro'
       - '.:/app'
     working_dir: /app
+    # TODO: Switch to UV
     command: bash -c 'pip install -U pip pip-tools && pip-compile --resolver=backtracking --upgrade -o requirements.txt'
     profiles:
       - donotstart
@@ -71,6 +72,10 @@ networks:
   default:
     name: divio-local-lb
     external: true
+
+volumes:
+  postgres:
+    driver: local
 
 secrets:
   netrc:
