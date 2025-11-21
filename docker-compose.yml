@@ -1,5 +1,7 @@
 x-base: &BASE
-  build: .
+  build:
+    context: .
+    dockerfile: Dockerfile.base
   links:
     - "db:postgres"
     - "rabbitmq:rabbitmq"
