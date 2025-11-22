@@ -59,16 +59,32 @@ services:
     build:
       context: .
       target: builder
+      dockerfile: Dockerfile.base
       secrets:
         - netrc
     volumes:
       - '~/.netrc:/root/.netrc:ro'
       - '.:/app'
     working_dir: /app
-    # TODO: Switch to UV
-    command: bash -c 'pip install -U pip pip-tools && pip-compile --resolver=backtracking --upgrade -o requirements.txt'
+    entrypoint: uv
+    command: lock --upgrade
+    environment:
+      UV_NO_SYNC: "1"
     profiles:
       - donotstart
+
+  lint:
+    image: divio/lint
+    user: "1000:1000"
+    entrypoint: /bin/lint
+    volumes:
+      - ".:/app:rw"
+    environment:
+      LINT_FILE_DOCKER: Dockerfile.base
+      LINT_FOLDER_PYTHON: bmcc
+    profiles:
+      - donotstart
+
 
 networks:
   default:

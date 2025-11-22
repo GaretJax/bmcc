@@ -41,6 +41,8 @@ dev = [
 [tool.ruff]
 extend = "/presets/ruff.toml"
 line-length=79
+
+[tool.ruff.lint]
 ignore = ["S101"]
 
 [tool.pytest]
