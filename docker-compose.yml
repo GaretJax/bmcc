@@ -1,7 +1,5 @@
 x-base: &BASE
-  build:
-    context: .
-    dockerfile: Dockerfile.base
+  image: bmcc
   links:
     - "db:postgres"
     - "rabbitmq:rabbitmq"
@@ -17,6 +15,9 @@ x-base: &BASE
 services:
   web:
     <<: *BASE
+    build:
+      context: .
+      dockerfile: Dockerfile.base
     command: uvicorn --host=0.0.0.0 --lifespan=off --port=80 --reload bmcc.asgi:application
     environment:
       VIRTUAL_HOST: bmcc.local.aldryn.net
