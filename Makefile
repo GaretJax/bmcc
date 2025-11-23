@@ -1,12 +1,12 @@
 reqs:
 	docker compose build deps
-	docker compose run deps
+	docker compose run --remove-orphans deps
 
 test:
-	docker compose run test pytest bmcc
+	docker compose run --remove-orphans test pytest bmcc
 
 lint:
-	docker compose run lint
+	docker compose run --remove-orphans lint
 
 lint_pre_commit:
-	docker compose run lint --check --staged ${ARGS}
+	docker compose run -T --remove-orphans lint --check --staged ${ARGS}
