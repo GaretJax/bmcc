@@ -50,6 +50,18 @@ class Beacon(models.Model):
 
 class Ping(models.Model):
     id = UUIDAutoField()
+    # Denormalized mission and asset fields to retain original assignment
+    # when a tracker is reused on a different asset/mission
+    mission = models.ForeignKey(
+        Mission,
+        related_name="pings",
+        on_delete=models.CASCADE,
+    )
+    asset = models.ForeignKey(
+        Asset,
+        related_name="pings",
+        on_delete=models.CASCADE,
+    )
     beacon = models.ForeignKey(
         Beacon,
         related_name="pings",
@@ -71,3 +83,10 @@ class Ping(models.Model):
 
     def __str__(self):
         return f"{self.beacon} @ {self.reported_at.isoformat()}"
+
+    def save(self, *args, **kwargs):
+        if self.asset_id is None:
+            self.asset = self.beacon.asset
+        if self.mission_id is None:
+            self.mission = self.asset.mission
+        super().save(*args, **kwargs)
