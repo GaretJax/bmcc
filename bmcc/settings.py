@@ -105,7 +105,10 @@ if EXECUTION_MODE == "build":
     DATABASES = {}
 else:
     DATABASES = {
-        "default": dj_database_url.parse(os.environ["DEFAULT_DATABASE_DSN"])
+        "default": dj_database_url.parse(
+            os.environ["DEFAULT_DATABASE_DSN"],
+            engine="django.contrib.gis.db.backends.postgis",
+        )
     }
     DATABASES["default"]["ATOMIC_REQUESTS"] = True
     DATABASES["default"].setdefault("OPTIONS", {}).update(
