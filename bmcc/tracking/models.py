@@ -71,8 +71,9 @@ class Ping(models.Model):
     )
     reported_at = models.DateTimeField()
     position = models.PointField(geography=True, dim=2)
-    altitude = models.FloatField(null=True, blank=True)
-    speed = models.FloatField(null=True, blank=True)
+    altitude = models.IntegerField(null=True, blank=True)
+    accuracy = models.IntegerField(null=True, blank=True)
+    speed = models.IntegerField(null=True, blank=True)
     course = models.FloatField(null=True, blank=True)
     metadata = models.JSONField(default=dict, blank=True)
 

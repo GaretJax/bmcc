@@ -12,6 +12,12 @@ admin.site.site_header = settings.ADMIN_SITE_HEADER
 urlpatterns = i18n_patterns(
     path(_("admin/"), admin.site.urls),
     path("tracking/", include("bmcc.tracking.urls")),
+    path(
+        "missions/",
+        include(
+            "bmcc.missions.urls",
+        ),
+    ),
     prefix_default_language=False,
 )
 

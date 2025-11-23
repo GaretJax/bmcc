@@ -63,6 +63,7 @@ dependencies = [
     { name = "django-storage-url" },
     { name = "psycopg2-binary" },
     { name = "sentry-sdk" },
+    { name = "simplekml" },
     { name = "unicode-slugify" },
     { name = "uvicorn" },
     { name = "whitenoise" },
@@ -98,6 +99,7 @@ requires-dist = [
     { name = "django-storage-url", specifier = ">=0.12.1" },
     { name = "psycopg2-binary", specifier = ">=2.9.11" },
     { name = "sentry-sdk", specifier = ">=2.45.0" },
+    { name = "simplekml", specifier = ">=1.3.6" },
     { name = "unicode-slugify", specifier = ">=0.1.5" },
     { name = "uvicorn", specifier = ">=0.38.0" },
     { name = "whitenoise", specifier = ">=6.11.0" },
@@ -991,6 +993,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/18/5d/3bf57dcd21979b887
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a3/dc/17031897dae0efacfea57dfd3a82fdd2a2aeb58e0ff71b77b87e44edc772/setuptools-80.9.0-py3-none-any.whl", hash = "sha256:062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922", size = 1201486, upload-time = "2025-05-27T00:56:49.664Z" },
 ]
+
+[[package]]
+name = "simplekml"
+version = "1.3.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/15/e4/c333a93b7e3346437ad1ff42b8e362b853eb405ad6243ab6163f9af2a460/simplekml-1.3.6.tar.gz", hash = "sha256:cda687be2754395fcab664e908ebf589facd41e8436d233d2be37a69efb1c536", size = 52999, upload-time = "2021-09-16T17:08:27.038Z" }
 
 [[package]]
 name = "six"
