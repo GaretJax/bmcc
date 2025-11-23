@@ -1,8 +1,10 @@
 from django import http
+from django.views.decorators.csrf import csrf_exempt
 
 from . import constants, models
 
 
+@csrf_exempt
 def owntracks_ping(request):
     beacon = (
         models.Beacon.objects.active()
