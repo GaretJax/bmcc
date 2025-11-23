@@ -15,7 +15,6 @@ class Migration(migrations.Migration):
             model_name="ping",
             name="asset",
             field=models.ForeignKey(
-                default=-1,
                 on_delete=django.db.models.deletion.CASCADE,
                 related_name="pings",
                 to="tracking.asset",
@@ -26,7 +25,6 @@ class Migration(migrations.Migration):
             model_name="ping",
             name="mission",
             field=models.ForeignKey(
-                default=-1,
                 on_delete=django.db.models.deletion.CASCADE,
                 related_name="pings",
                 to="missions.mission",

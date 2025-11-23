@@ -3,7 +3,7 @@ from django.contrib.gis.db import models
 from bmcc.fields import ConfigurableInstanceField, UUIDAutoField
 from bmcc.missions.models import Mission
 
-from . import constants
+from . import constants, managers
 
 
 class Asset(models.Model):
@@ -41,6 +41,8 @@ class Beacon(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    objects = managers.BeaconQuerySet.as_manager()
+
     class Meta:
         ordering = ["identifier"]
 
@@ -68,7 +70,8 @@ class Ping(models.Model):
         on_delete=models.CASCADE,
     )
     reported_at = models.DateTimeField()
-    position = models.PointField(geography=True)
+    position = models.PointField(geography=True, dim=2)
+    altitude = models.FloatField(null=True, blank=True)
     speed = models.FloatField(null=True, blank=True)
     course = models.FloatField(null=True, blank=True)
     metadata = models.JSONField(default=dict, blank=True)
