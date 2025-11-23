@@ -1,3 +1,5 @@
+import json
+
 from django import http
 from django.views.decorators.csrf import csrf_exempt
 
@@ -13,6 +15,6 @@ def owntracks_ping(request):
     )
 
     if beacon:
-        beacon.backend.handle_ping(beacon, {"body": request.body})
+        beacon.backend.handle_ping(beacon, json.loads(request.body))
 
     return http.HttpResponse()
