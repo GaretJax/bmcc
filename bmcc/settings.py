@@ -1,7 +1,6 @@
 import os
 import sys
 import tempfile
-from datetime import timedelta
 from pathlib import Path
 
 from django.utils.formats import get_format_lazy
@@ -52,6 +51,8 @@ INSTALLED_APPS = [
     "admin_auto_filters",
     # Custom apps
     "bmcc.celery.apps.DefaultConfig",
+    "bmcc.missions",
+    "bmcc.tracking",
 ]
 
 MIDDLEWARE = [
@@ -209,7 +210,7 @@ if ENVIRONMENT == "live":
         # "import_items": {
         # "imp"task": "bmcc.importing.tasks.import_from_active_item_configs",
         # "imp"schedule": timedelta(minutes=1),
-        #},
+        # },
     }
 
 
@@ -320,7 +321,6 @@ if sentry_dsn:
             os.environ.get("SENTRY_PROFILES_SAMPLE_RATE", "1.0")
         ),
     )
-
 
 
 ###############################################################################
