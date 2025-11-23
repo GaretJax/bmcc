@@ -13,6 +13,6 @@ def owntracks_ping(request):
     )
 
     if beacon:
-        beacon.backend.handle_ping(beacon, {})
+        beacon.backend.handle_ping(beacon, {"body": request.body})
 
     return http.HttpResponse()
