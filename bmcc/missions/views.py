@@ -1,8 +1,5 @@
-from datetime import timedelta
-
 from django.http import HttpResponse
 from django.urls import reverse
-from django.utils import timezone
 
 import simplekml
 
@@ -20,7 +17,8 @@ def kml_entrypoint(request, mission_id):
     netlink.link.href = request.build_absolute_uri(
         reverse("missions:updating_kml", kwargs={"mission_id": mission.pk})
     )
-    netlink.link.refreshmode = "onExpire"
+    netlink.link.refreshmode = "onInterval"
+    netlink.link.refreshinterval = 10
 
     response = HttpResponse(kml.kml())
     filename = f"{mission.pk}.kml"
@@ -32,7 +30,6 @@ def kml_update(request, mission_id):
     mission = models.Mission.objects.get(pk=mission_id)
 
     kml = simplekml.Kml()
-    kml.networklinkcontrol.expires = timezone.now() + timedelta(seconds=15)
 
     for beacon in Beacon.objects.active().filter(asset__mission=mission):
         ping = beacon.pings.order_by("-created_at").first()
