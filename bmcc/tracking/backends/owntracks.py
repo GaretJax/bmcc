@@ -8,6 +8,9 @@ from .. import models
 class OwnTracksBackend:
     beacon: models.Beacon
 
+    def __init__(self, beacon):
+        self.beacon = beacon
+
     def handle_ping(self, data):
         self.beacon.pings.create(
             position=Point(data["lon"], data["lat"]),

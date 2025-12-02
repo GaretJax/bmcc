@@ -1,0 +1,54 @@
+{% extends "tracking/base.html" %}
+
+{% block title %}OwnTracks configuration{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+    .grid { display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; align-items: center; }
+    #qrcode { width: 100%; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>OwnTracks configuration</h1>
+<p>Mission: {{ mission.name }}</p>
+<p>Asset: {{ asset.name }}</p>
+<p>Beacon: {{ beacon.identifier }}</p>
+
+<section class="card">
+    <h2>Quick setup</h2>
+    <div class="grid">
+        <div>
+            <p>Scan this QR code with the OwnTracks app to apply the configuration.</p>
+            <div id="qrcode" aria-label="OwnTracks configuration QR code"></div>
+        </div>
+        <div>
+            <p>You can also open the configuration link directly on the device:</p>
+            <p><a href="{{ remote_config_link }}">{{ remote_config_link }}</a></p>
+            <p>The link points to <code>{{ configuration_url }}</code>.</p>
+        </div>
+    </div>
+</section>
+
+<section class="card">
+    <h2>Manual settings</h2>
+    <ul>
+        <li>HTTP endpoint: <code>{{ report_url }}</code></li>
+        <li>Tracker ID: <code>{{ tracker_id }}</code></li>
+        <li>Device ID: <code>{{ beacon.identifier }}</code></li>
+    </ul>
+    <p>The configuration uses HTTP reporting and does not require authentication.</p>
+</section>
+{% endblock %}
+
+{% block extra_body %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-LIo9Y+QDOHXOMGN3eAJGEGZm4G6dkprdFMIALlTyBC0bYKT1eZqUPVHtVHCnRvWmvMRGsiE232z6eAqXdi66Lw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+    new QRCode(document.getElementById("qrcode"), {
+        text: "{{ remote_config_link|escapejs }}",
+        width: 260,
+        height: 260,
+    });
+</script>
+{% endblock %}
