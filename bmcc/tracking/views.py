@@ -2,14 +2,13 @@ import base64
 import json
 
 from django import http
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import DetailView, FormView
-
-from bmcc.missions.models import Mission
+from django.views.generic import DetailView, UpdateView
+from django.views.generic.edit import ModelFormMixin
 
 from . import constants, forms, models
 
@@ -29,58 +28,17 @@ class OwnTracksPingView(View):
         return http.HttpResponse()
 
 
-class MissionContextMixin:
-    mission = None
-
-    def setup(self, request, *args, **kwargs):
-        super().setup(request, *args, **kwargs)
-        self.mission = get_object_or_404(Mission, pk=kwargs.get("mission_id"))
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["mission"] = self.mission
-        return context
-
-
-class BeaconMissionMixin(MissionContextMixin):
-    beacon = None
-
-    def setup(self, request, *args, **kwargs):
-        super().setup(request, *args, **kwargs)
-        self.beacon = get_object_or_404(
-            models.Beacon.objects.select_related("asset__mission"),
-            pk=kwargs.get("beacon_id"),
-            asset__mission=self.mission,
-        )
-
-    def get_tracker_id(self):
-        tracker_id = self.beacon.identifier[:2].upper()
-        if len(tracker_id) == 1:
-            tracker_id = tracker_id + tracker_id
-        return tracker_id
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(
-            {
-                "beacon": self.beacon,
-                "asset": self.beacon.asset,
-                "tracker_id": self.get_tracker_id(),
-            }
-        )
-        return context
-
-
-class OwnTracksRegisterView(MissionContextMixin, FormView):
-    form_class = forms.OwnTracksRegistrationForm
+class OwnTracksRegisterView(UpdateView):
+    model = models.Mission
     template_name = "tracking/owntracks_register.html"
+    form_class = forms.OwnTracksRegistrationForm
+
+    def get_form_kwargs(self):
+        return super(ModelFormMixin, self).get_form_kwargs()
 
     def form_valid(self, form):
-        _, self.created_beacon = form.create_objects(self.mission)
-        return redirect(
-            "tracking:owntracks_configuration",
-            beacon_id=self.created_beacon.id,
-        )
+        _, beacon = form.create_objects(self.object)
+        return redirect("tracking:owntracks_configuration", pk=beacon.pk)
 
 
 class OwnTracksConfigurationView(DetailView):

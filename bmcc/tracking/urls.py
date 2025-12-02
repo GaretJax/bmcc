@@ -13,7 +13,7 @@ urlpatterns = [
         name="owntracks_ping",
     ),
     path(
-        "owntracks/mission/<uuid:mission_id>/new/",
+        "owntracks/mission/<uuid:pk>/new/",
         views.OwnTracksRegisterView.as_view(),
         name="owntracks_register",
     ),
