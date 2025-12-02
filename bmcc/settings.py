@@ -1,6 +1,7 @@
 import os
 import sys
 import tempfile
+from datetime import timedelta
 from pathlib import Path
 
 from django.utils.formats import get_format_lazy
@@ -209,14 +210,23 @@ CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_CONCURRENCY = 2
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 
-if ENVIRONMENT == "live":
-    CELERY_BEAT_SCHEDULE = {
-        # "import_items": {
-        # "imp"task": "bmcc.importing.tasks.import_from_active_item_configs",
-        # "imp"schedule": timedelta(minutes=1),
-        # },
+CELERY_BEAT_SCHEDULE = {
+    "update_beacon_locations_spot": {
+        "task": "bmcc.tracking.tasks.update_beacon_locations_spot",
+        "schedule": timedelta(minutes=1),
     }
+}
+if ENVIRONMENT == "live":
+    keep_tasks = CELERY_BEAT_SCHEDULE.keys()
+elif ENVIRONMENT == "local":
+    keep_tasks = [
+        "update_beacon_locations_spot",
+    ]
+else:
+    # Unknown environment, do not run any beat tasks
+    keep_tasks = []
 
+CELERY_BEAT_SCHEDULE = {k: CELERY_BEAT_SCHEDULE[k] for k in keep_tasks}
 
 ###############################################################################
 # Logging
@@ -325,6 +335,15 @@ if sentry_dsn:
             os.environ.get("SENTRY_PROFILES_SAMPLE_RATE", "1.0")
         ),
     )
+
+
+###############################################################################
+# SPOT backend
+
+if EXECUTION_MODE == "build":
+    SPOT_FEED_ID = ""
+else:
+    SPOT_FEED_ID = os.environ["SPOT_FEED_ID"]
 
 
 ###############################################################################

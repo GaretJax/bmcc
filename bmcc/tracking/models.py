@@ -36,7 +36,9 @@ class Beacon(models.Model):
     identifier = models.CharField(max_length=128, unique=True)
     description = models.TextField(blank=True)
     active = models.BooleanField(default=True)
-    backend = ConfigurableInstanceField(choices=constants.BeaconBackendClass)
+    backend = ConfigurableInstanceField(
+        takes_instance=True, choices=constants.BeaconBackendClass
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -83,6 +85,9 @@ class Ping(models.Model):
         ordering = ["-reported_at", "-created_at"]
         indexes = [
             models.Index(fields=["beacon", "reported_at"]),
+        ]
+        unique_together = [
+            ("beacon", "reported_at"),
         ]
 
     def __str__(self):

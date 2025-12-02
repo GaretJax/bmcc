@@ -17,4 +17,16 @@ class BeaconAdmin(ModelAdmin):
 
 @admin.register(models.Ping)
 class PingAdmin(ModelAdmin):
-    pass
+    date_hierarchy = "reported_at"
+    list_display = [
+        "reported_at",
+        "beacon",
+        "asset",
+        "mission",
+        "altitude",
+    ]
+    list_filter = [
+        "mission",
+        "asset",
+        "beacon",
+    ]

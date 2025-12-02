@@ -2,10 +2,14 @@ from datetime import UTC, datetime
 
 from django.contrib.gis.geos import Point
 
+from .. import models
+
 
 class OwnTracksBackend:
-    def handle_ping(self, beacon, data):
-        beacon.pings.create(
+    beacon: models.Beacon
+
+    def handle_ping(self, data):
+        self.beacon.pings.create(
             position=Point(data["lon"], data["lat"]),
             altitude=data.get("alt", None),
             accuracy=data.get("acc", None),
