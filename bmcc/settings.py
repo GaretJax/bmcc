@@ -349,6 +349,12 @@ else:
 ###############################################################################
 # Other settings
 
+
+if EXECUTION_MODE == "build":
+    BASE_URL = ""
+else:
+    BASE_URL = os.environ["BASE_URL"]
+
 FIXTURE_DIRS = ["fixtures"]
 
 ADMIN_SITE_HEADER = os.environ.get("ADMIN_SITE_HEADER", "BMCC")
