@@ -51,6 +51,9 @@ class Beacon(models.Model):
     def __str__(self):
         return self.identifier
 
+    def last_ping(self):
+        return self.pings.order_by("-reported_at").first()
+
 
 class Ping(models.Model):
     id = UUIDAutoField()
