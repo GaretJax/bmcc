@@ -13,17 +13,17 @@ urlpatterns = [
         name="owntracks_ping",
     ),
     path(
-        "mission/<uuid:mission_id>/new/",
+        "owntracks/mission/<uuid:mission_id>/new/",
         views.OwnTracksRegisterView.as_view(),
         name="owntracks_register",
     ),
     path(
-        "mission/<uuid:mission_id>/beacon/<uuid:beacon_id>/configuration/",
+        "owntracks/beacon/<uuid:pk>/configuration/",
         views.OwnTracksConfigurationView.as_view(),
         name="owntracks_configuration",
     ),
     path(
-        "mission/<uuid:mission_id>/beacon/<uuid:beacon_id>/configuration.json",
+        "owntracks/beacon/<uuid:pk>/configuration.otrc",
         views.OwnTracksConfigurationFileView.as_view(),
         name="owntracks_configuration_file",
     ),

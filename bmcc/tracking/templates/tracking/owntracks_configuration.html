@@ -5,15 +5,15 @@
 {% block extra_head %}
 {{ block.super }}
 <style>
-    .grid { display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; align-items: center; }
+    .grid { display: grid; gap: 1rem; grid-template-columns: 1fr; align-items: center; }
     #qrcode { width: 100%; }
 </style>
 {% endblock %}
 
 {% block content %}
 <h1>OwnTracks configuration</h1>
-<p>Mission: {{ mission.name }}</p>
-<p>Asset: {{ asset.name }}</p>
+<p>Mission: {{ beacon.asset.mission.name }}</p>
+<p>Asset: {{ beacon.asset.name }}</p>
 <p>Beacon: {{ beacon.identifier }}</p>
 
 <section class="card">
@@ -25,28 +25,25 @@
         </div>
         <div>
             <p>You can also open the configuration link directly on the device:</p>
-            <p><a href="{{ remote_config_link }}">{{ remote_config_link }}</a></p>
-            <p>The link points to <code>{{ configuration_url }}</code>.</p>
+            <p><a href="{{ owntracks_url }}">{{ owntracks_url }}</a></p>
         </div>
     </div>
 </section>
 
 <section class="card">
     <h2>Manual settings</h2>
-    <ul>
-        <li>HTTP endpoint: <code>{{ report_url }}</code></li>
-        <li>Tracker ID: <code>{{ tracker_id }}</code></li>
-        <li>Device ID: <code>{{ beacon.identifier }}</code></li>
-    </ul>
+    <div>
+      <pre>{{ config_json }}</pre>
+    </div>
     <p>The configuration uses HTTP reporting and does not require authentication.</p>
 </section>
 {% endblock %}
 
 {% block extra_body %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-LIo9Y+QDOHXOMGN3eAJGEGZm4G6dkprdFMIALlTyBC0bYKT1eZqUPVHtVHCnRvWmvMRGsiE232z6eAqXdi66Lw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
     new QRCode(document.getElementById("qrcode"), {
-        text: "{{ remote_config_link|escapejs }}",
+        text: "{{ owntracks_url|escapejs }}",
         width: 260,
         height: 260,
     });

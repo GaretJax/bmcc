@@ -1,5 +1,5 @@
+import base64
 import json
-from urllib.parse import quote
 
 from django import http
 from django.shortcuts import get_object_or_404, redirect
@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import FormView, TemplateView
+from django.views.generic import DetailView, FormView
 
 from bmcc.missions.models import Mission
 
@@ -61,11 +61,13 @@ class BeaconMissionMixin(MissionContextMixin):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({
-            "beacon": self.beacon,
-            "asset": self.beacon.asset,
-            "tracker_id": self.get_tracker_id(),
-        })
+        context.update(
+            {
+                "beacon": self.beacon,
+                "asset": self.beacon.asset,
+                "tracker_id": self.get_tracker_id(),
+            }
+        )
         return context
 
 
@@ -77,50 +79,45 @@ class OwnTracksRegisterView(MissionContextMixin, FormView):
         _, self.created_beacon = form.create_objects(self.mission)
         return redirect(
             "tracking:owntracks_configuration",
-            mission_id=self.mission.id,
             beacon_id=self.created_beacon.id,
         )
 
 
-class OwnTracksConfigurationView(BeaconMissionMixin, TemplateView):
+class OwnTracksConfigurationView(DetailView):
+    queryset = models.Beacon.objects.filter(
+        backend_class_path=constants.BeaconBackendClass.OWNTRACKS
+    )
     template_name = "tracking/owntracks_configuration.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        config = self.object.backend.get_config()
         config_url = self.request.build_absolute_uri(
             reverse(
                 "tracking:owntracks_configuration_file",
-                kwargs={"mission_id": self.mission.id, "beacon_id": self.beacon.id},
+                kwargs={"pk": self.object.id},
             )
         )
-        report_url = self.request.build_absolute_uri(reverse("tracking:owntracks_ping"))
-        remote_config_link = f"owntracks:///config?url={quote(config_url)}"
-
+        config_json = json.dumps(config, indent=2)
+        config_payload = base64.b64encode(
+            json.dumps(config).encode("utf-8")
+        ).decode("ascii")
+        owntracks_url = f"owntracks:///config?inline={config_payload}"
         context.update(
             {
-                "remote_config_link": remote_config_link,
-                "configuration_url": config_url,
-                "report_url": report_url,
+                "config": config,
+                "config_json": config_json,
+                "config_url": config_url,
+                "owntracks_url": owntracks_url,
             }
         )
         return context
 
 
-class OwnTracksConfigurationFileView(BeaconMissionMixin, View):
-    def get(self, request, *args, **kwargs):
-        payload = {
-            "_type": "configuration",
-            "info": f"OwnTracks setup for {self.beacon.asset.name}",
-            "connection": "bmcc",
-            "connections": {
-                "bmcc": {
-                    "type": "http",
-                    "url": request.build_absolute_uri(reverse("tracking:owntracks_ping")),
-                    "deviceId": str(self.beacon.identifier),
-                    "trackerId": self.get_tracker_id(),
-                    "auth": False,
-                }
-            },
-        }
+class OwnTracksConfigurationFileView(DetailView):
+    queryset = models.Beacon.objects.filter(
+        backend_class_path=constants.BeaconBackendClass.OWNTRACKS
+    )
 
-        return http.JsonResponse(payload)
+    def get(self, request, *args, **kwargs):
+        return http.JsonResponse(self.get_object().backend.get_config())
