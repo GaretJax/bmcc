@@ -39,6 +39,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
   divio:
+    if: github.ref == 'refs/heads/main'
     name: Deploy to Divio
     needs: docker
     runs-on: ubuntu-latest
