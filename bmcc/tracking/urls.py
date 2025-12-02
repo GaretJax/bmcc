@@ -27,4 +27,5 @@ urlpatterns = [
         views.OwnTracksConfigurationFileView.as_view(),
         name="owntracks_configuration_file",
     ),
+    path("api/<uuid:pk>/ping/", views.BeaconUpdateView.as_view()),
 ]
