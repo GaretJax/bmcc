@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Tracking{% endblock %}</title>
+    <style>
+        body { font-family: sans-serif; margin: 2rem auto; max-width: 720px; line-height: 1.5; }
+        h1, h2 { margin-bottom: 0.5rem; }
+        .card { border: 1px solid #ccc; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem; }
+        a { color: #0047ab; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% block content %}{% endblock %}
+    {% block extra_body %}{% endblock %}
+</body>
+</html>
