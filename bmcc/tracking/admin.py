@@ -40,7 +40,7 @@ class BeaconAdmin(ModelAdmin):
 
     def last_ping_timestamp(self, obj):
         ping = obj.last_ping()
-        return admin_detail_link(ping, ping.reported_at)
+        return admin_detail_link(ping, ping.reported_at) if ping else None
 
 
 @admin.register(models.Ping)
