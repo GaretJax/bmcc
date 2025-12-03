@@ -30,8 +30,7 @@ class LaunchSiteCandidate(models.Model):
         on_delete=models.CASCADE,
     )
     name = models.CharField(max_length=255)
-    location = gis_models.PointField(geography=True, dim=2)
-    altitude = models.IntegerField(null=True, blank=True)
+    location = gis_models.PointField(geography=True, dim=3)
     intended_launch_at = models.DateTimeField(
         null=True, blank=True, help_text="Planned datetime for launch"
     )
@@ -40,6 +39,11 @@ class LaunchSiteCandidate(models.Model):
         related_name="launch_site_candidates",
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
+    )
+    prediction_history = models.ManyToManyField(
+        "predictions.Prediction",
+        related_name="launch_site_history",
         blank=True,
     )
     metadata = models.JSONField(default=dict, blank=True)

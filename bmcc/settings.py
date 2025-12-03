@@ -215,13 +215,18 @@ CELERY_BEAT_SCHEDULE = {
     "update_beacon_locations_spot": {
         "task": "bmcc.tracking.tasks.update_beacon_locations_spot",
         "schedule": timedelta(minutes=1),
-    }
+    },
+    "generate_future_launch_predictions": {
+        "task": "bmcc.missions.tasks.generate_predictions_for_future_launches",
+        "schedule": timedelta(minutes=5),
+    },
 }
 if ENVIRONMENT == "live":
     keep_tasks = CELERY_BEAT_SCHEDULE.keys()
 elif ENVIRONMENT == "local":
     keep_tasks = [
         "update_beacon_locations_spot",
+        "generate_future_launch_predictions",
     ]
 else:
     # Unknown environment, do not run any beat tasks

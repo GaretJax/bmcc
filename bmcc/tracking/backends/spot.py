@@ -46,7 +46,7 @@ class SpotBackend:
                     continue
                 reported_at = datetime.fromisoformat(message["dateTime"])
                 position = Point(message["longitude"], message["latitude"])
-                altitude = message["altitude"]
+                # altitude = message["altitude"]
                 ping, created = self.beacon.pings.get_or_create(
                     beacon=self.beacon,
                     reported_at=reported_at,
@@ -54,7 +54,7 @@ class SpotBackend:
                         "mission": self.beacon.asset.mission,
                         "asset": self.beacon.asset,
                         "position": position,
-                        "altitude": altitude,
+                        # "altitude": altitude,  # Not supported on SPOT 2
                         "metadata": message,
                     },
                 )

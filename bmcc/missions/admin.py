@@ -16,7 +16,6 @@ class LaunchSiteCandidateAdmin(ModelAdmin):
         "name",
         "mission",
         "intended_launch_at",
-        "altitude",
     ]
     list_filter = [
         "mission",
