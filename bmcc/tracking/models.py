@@ -93,6 +93,14 @@ class Ping(models.Model):
     def __str__(self):
         return f"{self.beacon} @ {self.reported_at.isoformat()}"
 
+    @property
+    def longitude(self):
+        return self.point.x
+
+    @property
+    def latitude(self):
+        return self.point.y
+
     def save(self, *args, **kwargs):
         if self.asset_id is None:
             self.asset = self.beacon.asset

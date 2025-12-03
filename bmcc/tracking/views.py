@@ -44,9 +44,9 @@ class OwnTracksPingView(View):
             # TODO: Log
             return http.JsonResponse({}, status=200)
 
-        beacon.backend.handle_ping(data)
+        response = beacon.backend.handle_ping(data)
 
-        return http.JsonResponse({})
+        return http.JsonResponse(response)
 
 
 class OwnTracksRegisterView(UpdateView):
