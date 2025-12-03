@@ -92,12 +92,22 @@ def kml_update(request, mission_id):
             coords = [build_coords(ping) for ping in pings]
 
             track = tracks_folder.newlinestring(
-                name=beacon.identifier, coords=coords
+                name=beacon.identifier,
+                coords=coords,
+                altitudemode="absolute",
+                gxaltitudemode="absolute",
+                visibility=(
+                    asset.asset_type == tracking_constants.AssetType.BALLOON
+                ),
             )
-            track.altitudemode = "absolute"
+            track.style.iconstyle.icon.href = ICON_BY_ASSET_TYPE.get(
+                asset.asset_type,
+                "http://maps.google.com/mapfiles/kml/paddle/wht-circle.png",
+            )
 
             point = positions_folder.newpoint(
                 name=beacon.identifier,
+                altitudemode="absolute",
                 gxaltitudemode="absolute",
                 coords=[coords[-1]],
             )
