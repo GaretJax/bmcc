@@ -55,8 +55,8 @@ class OwnTracksBackend:
     def prepare_location_message(self, ping):
         msg = {
             "_type": "location",
-            "lon": ping.position.longitude,
-            "lat": ping.position.latitude,
+            "lon": ping.longitude,
+            "lat": ping.latitude,
             "tid": ping.beacon.identifier[:2],
             "deviceId": str(ping.beacon.pk),
             "tst": ping.reported_at.timestamp(),
