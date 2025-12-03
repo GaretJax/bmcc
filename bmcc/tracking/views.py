@@ -1,5 +1,6 @@
 import base64
 import json
+import logging
 
 from django import http
 from django.contrib.gis.geos import Point
@@ -16,14 +17,37 @@ from django.views.generic.edit import ModelFormMixin
 from . import constants, forms, models
 
 
+logger = logging.getLogger(__name__)
+
+
 @method_decorator(csrf_exempt, name="dispatch")
 class OwnTracksPingView(View):
     def post(self, request, *args, **kwargs):
         body = request.body
-        data = json.loads(body)
+        try:
+            data = json.loads(body.decode("utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            logger.warning(
+                "OwnTracks payload is not valid JSON",
+                exc_info=True,
+                extra={
+                    "path": request.path,
+                    "body_preview": body[:200].decode("utf-8", "replace"),
+                    "content_length": len(body),
+                },
+            )
+            return JsonResponse({"error": "Invalid JSON payload"}, status=400)
 
         msg_type = data.get("_type")
         if msg_type != "location":
+            logger.warning(
+                "OwnTracks message ignored (non-location)",
+                extra={
+                    "msg_type": msg_type,
+                    "topic": data.get("topic"),
+                    "payload_keys": sorted(data.keys()),
+                },
+            )
             return http.JsonResponse({}, status=200)
             # return http.JsonResponse(
             #     {"unknown_message_type": msg_type}, status=400
@@ -31,6 +55,18 @@ class OwnTracksPingView(View):
 
         topic = data.get("topic", "")
         identifier = topic.rsplit("/", 1)[-1]
+
+        if not identifier:
+            logger.error(
+                "OwnTracks payload missing beacon identifier",
+                extra={
+                    "topic": topic,
+                    "payload_keys": sorted(data.keys()),
+                },
+            )
+            return JsonResponse(
+                {"error": "Missing beacon identifier"}, status=400
+            )
 
         beacon = (
             models.Beacon.objects.active()
@@ -42,10 +78,37 @@ class OwnTracksPingView(View):
         )
 
         if not beacon:
-            # TODO: Log
+            logger.warning(
+                "OwnTracks beacon not found or inactive",
+                extra={
+                    "identifier": identifier,
+                    "topic": topic,
+                },
+            )
             return http.JsonResponse({}, status=200)
 
-        response = beacon.backend.handle_ping(data)
+        try:
+            ping, response = beacon.backend.handle_ping(data)
+        except Exception:
+            logger.exception(
+                "OwnTracks backend failed to handle ping",
+                extra={
+                    "beacon_id": str(beacon.id),
+                    "identifier": identifier,
+                    "payload": data,
+                },
+            )
+            return JsonResponse(
+                {"error": "Could not process ping"}, status=500
+            )
+
+        logger.debug(
+            "OwnTracks ping processed",
+            extra={
+                "beacon_id": str(beacon.id),
+                "ping_id": str(ping.id),
+            },
+        )
 
         return http.JsonResponse(response, safe=False)
 

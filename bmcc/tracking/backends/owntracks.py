@@ -19,7 +19,7 @@ class OwnTracksBackend:
         if data["_type"] != "location":
             raise ValueError("Not a location message")
 
-        self.beacon.pings.create(
+        ping = self.beacon.pings.create(
             position=Point(data["lon"], data["lat"]),
             altitude=data.get("alt", None),
             accuracy=data.get("acc", None),
@@ -29,7 +29,7 @@ class OwnTracksBackend:
         )
 
         if not self.show_all:
-            return []
+            return ping, []
 
         friends = (
             models.Beacon.objects.active()
@@ -39,7 +39,7 @@ class OwnTracksBackend:
             )
             .exclude(pk=self.beacon.pk)
         )
-        return (
+        return ping, (
             [
                 {"_type": "cmd", "action": "clearWaypoints"},
             ]
