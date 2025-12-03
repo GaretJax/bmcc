@@ -39,9 +39,13 @@ def kml_entrypoint(request, mission_id):
 
 
 def kml_update(request, mission_id):
-    mission = models.Mission.objects.get(pk=mission_id)
+    mission = models.Mission.objects.prefetch_related(
+        "launch_site_candidates"
+    ).get(pk=mission_id)
 
     kml = simplekml.Kml()
+
+    launch_sites_folder = kml.newfolder(name="Launch sites")
 
     assets = (
         Asset.objects.filter(mission=mission)
@@ -65,10 +69,10 @@ def kml_update(request, mission_id):
     type_folders = {}
 
     # Normalize coordinates to 2D or 3D based on altitude availability
-    def build_coords(ping):
-        if ping.altitude is not None:
-            return (ping.longitude, ping.latitude, ping.altitude)
-        return (ping.longitude, ping.latitude)
+    def build_coords(longitude, latitude, altitude):
+        if altitude is not None:
+            return (longitude, latitude, altitude)
+        return (longitude, latitude)
 
     for asset in assets:
         type_folder = type_folders.get(asset.asset_type)
@@ -89,7 +93,10 @@ def kml_update(request, mission_id):
             if not pings:
                 continue
 
-            coords = [build_coords(ping) for ping in pings]
+            coords = [
+                build_coords(ping.longitude, ping.latitude, ping.altitude)
+                for ping in pings
+            ]
 
             track = tracks_folder.newlinestring(
                 name=beacon.identifier,
@@ -115,6 +122,19 @@ def kml_update(request, mission_id):
                 asset.asset_type,
                 "http://maps.google.com/mapfiles/kml/paddle/wht-circle.png",
             )
+
+    for launch_site in mission.launch_site_candidates.all():
+        site_folder = launch_sites_folder.newfolder(name=launch_site.name)
+        coords = [
+            build_coords(
+                launch_site.location.x,
+                launch_site.location.y,
+                launch_site.altitude,
+            )
+        ]
+        point = site_folder.newpoint(
+            name=launch_site.name, coords=coords, gxaltitudemode="absolute"
+        )
 
     response = HttpResponse(kml.kml())
     filename = f"{mission.pk}-update.kml"

@@ -1,3 +1,4 @@
+from django.contrib.gis.db import models as gis_models
 from django.db import models
 
 from bmcc.fields import UUIDAutoField
@@ -16,3 +17,28 @@ class Mission(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class LaunchSiteCandidate(models.Model):
+    id = UUIDAutoField()
+    mission = models.ForeignKey(
+        Mission,
+        related_name="launch_site_candidates",
+        on_delete=models.CASCADE,
+    )
+    name = models.CharField(max_length=255)
+    location = gis_models.PointField(geography=True, dim=2)
+    altitude = models.IntegerField(null=True, blank=True)
+    intended_launch_at = models.DateTimeField(
+        null=True, blank=True, help_text="Planned datetime for launch"
+    )
+    metadata = models.JSONField(default=dict, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["mission", "name"]
+
+    def __str__(self):
+        return f"{self.name} ({self.mission})"
