@@ -89,9 +89,6 @@ class Ping(models.Model):
         indexes = [
             models.Index(fields=["beacon", "reported_at"]),
         ]
-        unique_together = [
-            ("beacon", "reported_at"),
-        ]
 
     def __str__(self):
         return f"{self.beacon} @ {self.reported_at.isoformat()}"
