@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils import timezone
 
 from adminutils import ModelAdmin, admin_detail_link
 
@@ -40,7 +41,11 @@ class BeaconAdmin(ModelAdmin):
 
     def last_ping_timestamp(self, obj):
         ping = obj.last_ping()
-        return admin_detail_link(ping, ping.reported_at) if ping else None
+        return (
+            admin_detail_link(ping, timezone.localtime(ping.reported_at))
+            if ping
+            else None
+        )
 
 
 @admin.register(models.Ping)
