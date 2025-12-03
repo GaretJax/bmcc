@@ -99,7 +99,7 @@ def kml_update(request, mission_id):
             point = positions_folder.newpoint(
                 name=beacon.identifier,
                 gxaltitudemode="absolute",
-                coords=coords[-1],
+                coords=[coords[-1]],
             )
             point.style.iconstyle.icon.href = ICON_BY_ASSET_TYPE.get(
                 asset.asset_type,
