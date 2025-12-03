@@ -24,6 +24,12 @@ services:
 
   test:
     <<: *BASE
+    image: bmcc-dev
+    build:
+      context: .
+      dockerfile: Dockerfile.base
+      args:
+        VENV_IMAGE: venv_dev
     command: pytest ./bmcc
     env_file:
       - .env-local

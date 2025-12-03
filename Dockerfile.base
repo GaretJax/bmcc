@@ -1,4 +1,5 @@
 ARG VIRTUAL_ENV="/opt/venv"
+ARG VENV_IMAGE=venv
 
 
 FROM python:3.13-slim-trixie AS builder
@@ -23,6 +24,17 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --no-dev --locked --compile-bytecode --no-install-project --link-mode=copy
 
 
+FROM venv AS venv_dev
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --compile-bytecode --no-install-project --link-mode=copy
+
+
+# hadolint ignore=DL3006
+FROM $VENV_IMAGE AS venv_temp
+
+
 FROM python:3.13-slim-trixie
 ARG VIRTUAL_ENV
 
@@ -43,7 +55,7 @@ ENV VIRTUAL_ENV="$VIRTUAL_ENV" \
     PATH="$VIRTUAL_ENV/bin:$PATH" \
     DJANGO_SETTINGS_MODULE=bmcc.settings
 
-COPY --from=venv $VIRTUAL_ENV $VIRTUAL_ENV
+COPY --from=venv_temp $VIRTUAL_ENV $VIRTUAL_ENV
 
 # Allow uvicorn and python to listen on port 80 even when not running as root
 RUN setcap 'cap_net_bind_service=+ep' "$VIRTUAL_ENV/bin/uvicorn" \
