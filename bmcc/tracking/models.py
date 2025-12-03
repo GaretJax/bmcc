@@ -95,11 +95,11 @@ class Ping(models.Model):
 
     @property
     def longitude(self):
-        return self.point.x
+        return self.position.x
 
     @property
     def latitude(self):
-        return self.point.y
+        return self.position.y
 
     def save(self, *args, **kwargs):
         if self.asset_id is None:
