@@ -19,7 +19,8 @@ from . import constants, forms, models
 @method_decorator(csrf_exempt, name="dispatch")
 class OwnTracksPingView(View):
     def post(self, request, *args, **kwargs):
-        data = json.loads(request.body)
+        body = request.body
+        data = json.loads(body)
 
         msg_type = data.get("_type")
         if msg_type != "location":

@@ -39,10 +39,16 @@ class OwnTracksBackend:
             )
             .exclude(pk=self.beacon.pk)
         )
-        return [self.prepare_card_message(beacon) for beacon in friends] + [
-            self.prepare_location_message(beacon.last_ping())
-            for beacon in friends
-        ]
+        return (
+            [
+                {"_type": "cmd", "action": "clearWaypoints"},
+            ]
+            + [self.prepare_card_message(beacon) for beacon in friends]
+            + [
+                self.prepare_location_message(beacon.last_ping())
+                for beacon in friends
+            ]
+        )
 
         # https://owntracks.org/booklet/tech/json/
         # {
