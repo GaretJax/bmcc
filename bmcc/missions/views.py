@@ -107,6 +107,12 @@ def kml_update(request, mission_id):
                     asset.asset_type == tracking_constants.AssetType.BALLOON
                 ),
             )
+            if asset.asset_type == tracking_constants.AssetType.BALLOON:
+                track.extrude = 1
+                track.tessellate = 1
+                track.style.linestyle.color = "7f800080"
+                track.style.linestyle.width = 4
+                track.style.polystyle.color = "7f800080"
             track.style.iconstyle.icon.href = ICON_BY_ASSET_TYPE.get(
                 asset.asset_type,
                 "http://maps.google.com/mapfiles/kml/paddle/wht-circle.png",
