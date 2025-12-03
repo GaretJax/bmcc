@@ -328,6 +328,7 @@ if sentry_dsn:
         release=os.environ.get("GIT_COMMIT", "develop"),
         environment=ENVIRONMENT,
         server_name=os.environ.get("DOMAIN", os.environ.get("HOSTNAME")),
+        send_default_pii=True,
         traces_sample_rate=float(
             os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "1.0")
         ),
