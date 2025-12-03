@@ -39,7 +39,7 @@ class OwnTracksBackend:
             )
             .exclude(pk=self.beacon.pk)
         )
-        return [
+        return [self.prepare_card_message(beacon) for beacon in friends] + [
             self.prepare_location_message(beacon.last_ping())
             for beacon in friends
         ]
@@ -69,6 +69,13 @@ class OwnTracksBackend:
             msg["speed"] = ping.speed
 
         return msg
+
+    def prepare_card_message(self, beacon):
+        return {
+            "_type": "card",
+            "tid": beacon.identifier[:2],
+            "name": beacon.asset.name,
+        }
 
     def get_config(self):
         return {
