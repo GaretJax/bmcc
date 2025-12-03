@@ -37,17 +37,13 @@ class OwnTracksBackend:
     def get_config(self):
         return {
             "_type": "configuration",
-            "info": f"OwnTracks setup for {self.beacon.asset.name}",
-            "connection": "bmcc",
-            "connections": {
-                "bmcc": {
-                    "type": "http",
-                    "url": urljoin(
-                        settings.BASE_URL, reverse("tracking:owntracks_ping")
-                    ),
-                    "deviceId": str(self.beacon.identifier)[:2],
-                    "trackerId": str(self.beacon.pk),
-                    "auth": False,
-                }
-            },
+            "deviceId": str(self.beacon.identifier),
+            "tid": str(self.beacon.pk)[:2],
+            "days": 1,
+            "mode": 3,
+            "url": urljoin(
+                settings.BASE_URL, reverse("tracking:owntracks_ping")
+            ),
+            "auth": False,
+            "remoteConfiguration": True,
         }
