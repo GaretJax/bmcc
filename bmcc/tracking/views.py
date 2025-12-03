@@ -23,9 +23,10 @@ class OwnTracksPingView(View):
 
         msg_type = data.get("_type")
         if msg_type != "location":
-            return http.JsonResponse(
-                {"unknown_message_type": msg_type}, status=400
-            )
+            return http.JsonResponse({}, status=200)
+            # return http.JsonResponse(
+            #     {"unknown_message_type": msg_type}, status=400
+            # )
 
         topic = data.get("topic", "")
         identifier = topic.rsplit("/", 1)[-1]
@@ -40,7 +41,8 @@ class OwnTracksPingView(View):
         )
 
         if not beacon:
-            return http.JsonResponse({}, status=404)
+            # TODO: Log
+            return http.JsonResponse({}, status=200)
 
         beacon.backend.handle_ping(data)
 
