@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "admin_auto_filters",
     # Custom apps
     "bmcc.celery.apps.DefaultConfig",
+    "bmcc.predictions",
     "bmcc.missions",
     "bmcc.tracking",
 ]

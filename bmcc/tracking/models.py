@@ -81,6 +81,13 @@ class Ping(models.Model):
     speed = models.IntegerField(null=True, blank=True)
     course = models.FloatField(null=True, blank=True)
     metadata = models.JSONField(default=dict, blank=True)
+    prediction = models.ForeignKey(
+        "predictions.Prediction",
+        related_name="pings",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 

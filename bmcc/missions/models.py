@@ -8,6 +8,9 @@ class Mission(models.Model):
     id = UUIDAutoField()
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
+    ascent_rate = models.FloatField(null=True, blank=True)
+    burst_altitude = models.FloatField(null=True, blank=True)
+    descent_rate = models.FloatField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -31,6 +34,13 @@ class LaunchSiteCandidate(models.Model):
     altitude = models.IntegerField(null=True, blank=True)
     intended_launch_at = models.DateTimeField(
         null=True, blank=True, help_text="Planned datetime for launch"
+    )
+    prediction = models.ForeignKey(
+        "predictions.Prediction",
+        related_name="launch_site_candidates",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
     )
     metadata = models.JSONField(default=dict, blank=True)
 
