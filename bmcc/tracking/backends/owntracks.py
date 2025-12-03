@@ -37,8 +37,8 @@ class OwnTracksBackend:
     def get_config(self):
         return {
             "_type": "configuration",
-            "deviceId": str(self.beacon.identifier),
-            "tid": str(self.beacon.pk)[:2],
+            "deviceId": str(self.beacon.pk),
+            "tid": str(self.beacon.identifier)[:2],
             "days": 1,
             "mode": 3,
             "url": urljoin(

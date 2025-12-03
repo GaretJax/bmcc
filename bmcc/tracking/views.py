@@ -21,17 +21,20 @@ class OwnTracksPingView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
 
-        identifier = data.get("device")
-        if not identifier:
-            topic = data.get("topic", "")
-            if topic:
-                identifier = topic.rsplit("/", 1)[-1]
+        msg_type = data.get("_type")
+        if msg_type != "location":
+            return http.JsonResponse(
+                {"unknown_message_type": msg_type}, status=400
+            )
+
+        topic = data.get("topic", "")
+        identifier = topic.rsplit("/", 1)[-1]
 
         beacon = (
             models.Beacon.objects.active()
             .filter(
                 backend_class_path=constants.BeaconBackendClass.OWNTRACKS,
-                identifier=identifier,
+                pk=identifier,
             )
             .first()
         )
