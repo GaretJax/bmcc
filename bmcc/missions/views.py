@@ -11,10 +11,10 @@ from . import models
 
 ICON_BY_ASSET_TYPE = {
     tracking_constants.AssetType.BALLOON: (
-        "http://maps.google.com/mapfiles/kml/paddle/ylw-circle.png"
+        "http://maps.google.com/mapfiles/kml/paddle/purple-blank.png"
     ),
     tracking_constants.AssetType.VEHICLE: (
-        "http://maps.google.com/mapfiles/kml/paddle/blu-circle.png"
+        "http://maps.google.com/mapfiles/kml/shapes/woman.png"
     ),
 }
 
@@ -98,14 +98,21 @@ def kml_update(request, mission_id):
                 for ping in pings
             ]
 
+            kwargs = {}
+            if any(c[2] for c in coords):
+                kwargs["altitudemode"] = "absolute"
+                kwargs["gxaltitudemode"] = "absolute"
+            else:
+                kwargs["altitudemode"] = "clampToGround"
+                kwargs["gxaltitudemode"] = "clampToGround"
+
             track = tracks_folder.newlinestring(
                 name=beacon.identifier,
                 coords=coords,
-                altitudemode="absolute",
-                gxaltitudemode="absolute",
                 visibility=(
                     asset.asset_type == tracking_constants.AssetType.BALLOON
                 ),
+                **kwargs,
             )
             if asset.asset_type == tracking_constants.AssetType.BALLOON:
                 track.extrude = 1
