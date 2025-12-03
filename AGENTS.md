@@ -13,6 +13,7 @@
 - `make test` or `docker compose run --remove-orphans test pytest bmcc` — run pytest with the Django test settings (`.env-testing` is loaded).
 - `make lint` — run the lint suite via the `lint` service (ruff, formatting checks).
 - `make lint_pre_commit ARGS="--files <paths>"` — lint staged/targeted files locally before committing.
+- `docker compose deps add <package>` — add new python dependencies using the `uv` entrypoint in the `deps` service.
 
 ## Coding Style & Naming Conventions
 - Python 3.13; keep line length at 79 characters (ruff config). Ruff ignores `S101`; otherwise follow default rules in `/presets/ruff.toml`.
