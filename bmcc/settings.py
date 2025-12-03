@@ -257,7 +257,7 @@ LOGGING = {
         "bmcc": {
             "handlers": ["console"],
             "level": "INFO",
-            "propagate": False,
+            "propagate": True,
         },
         "django": {
             "handlers": ["console"],
