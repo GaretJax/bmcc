@@ -30,7 +30,8 @@ class LaunchSiteCandidate(models.Model):
         on_delete=models.CASCADE,
     )
     name = models.CharField(max_length=255)
-    location = gis_models.PointField(geography=True, dim=3)
+    location = gis_models.PointField(geography=True, dim=2)
+    altitude = models.FloatField(null=True, blank=True)
     intended_launch_at = models.DateTimeField(
         null=True, blank=True, help_text="Planned datetime for launch"
     )

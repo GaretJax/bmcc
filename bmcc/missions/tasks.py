@@ -60,6 +60,7 @@ def generate_predictions_for_future_launches(self):
         prediction = Prediction.objects.create(
             launch_at=site.intended_launch_at,
             launch_location=site.location,
+            launch_altitude=site.altitude,
             additional_parameters=additional_params,
         )
         site.prediction_history.add(prediction)

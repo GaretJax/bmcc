@@ -45,12 +45,13 @@ class TawhiriBackend:
         self._apply_results(prediction, data)
         prediction.save(
             update_fields=[
-                "prediction",
                 "bursting_at",
-                "landing_at",
-                "launch_at",
                 "burst_location",
+                "burst_altitude",
+                "landing_at",
                 "landing_location",
+                "landing_altitude",
+                "prediction",
                 "updated_at",
             ]
         )
@@ -65,7 +66,7 @@ class TawhiriBackend:
         params = {
             "launch_latitude": prediction.launch_location.y,
             "launch_longitude": prediction.launch_location.x,
-            "launch_altitude": prediction.launch_location.z,
+            "launch_altitude": prediction.launch_altitude or 0,
             "launch_datetime": prediction.launch_at.isoformat(),
         }
         params.update(prediction.additional_parameters or {})
@@ -73,6 +74,7 @@ class TawhiriBackend:
 
     def _apply_results(self, prediction: Prediction, data: dict[str, Any]):
         prediction.prediction = data
+
         ascent, descent = data["prediction"]
         burst = ascent["trajectory"][-1]
         land = descent["trajectory"][-1]
@@ -81,11 +83,12 @@ class TawhiriBackend:
         prediction.burst_location = Point(
             burst["latitude"],
             burst["longitude"],
-            burst["altitude"],
         )
+        prediction.burst_altitude = burst["altitude"]
+
         prediction.landing_at = parse_datetime(land["datetime"])
         prediction.land_location = Point(
             land["latitude"],
             land["longitude"],
-            land["altitude"],
         )
+        prediction.land_altitude = land["altitude"]

@@ -8,17 +8,20 @@ class Prediction(models.Model):
     id = UUIDAutoField()
 
     launch_at = models.DateTimeField()
-    launch_location = gis_models.PointField(geography=True, dim=3)
+    launch_location = gis_models.PointField(geography=True, dim=2)
+    launch_altitude = models.FloatField(null=True, blank=True)
 
     bursting_at = models.DateTimeField(null=True, blank=True)
     burst_location = gis_models.PointField(
-        geography=True, dim=3, null=True, blank=True
+        geography=True, dim=2, null=True, blank=True
     )
+    burst_altitude = models.FloatField(null=True, blank=True)
 
     landing_at = models.DateTimeField(null=True, blank=True)
     landing_location = gis_models.PointField(
-        geography=True, dim=3, null=True, blank=True
+        geography=True, dim=2, null=True, blank=True
     )
+    landing_altitude = models.FloatField(null=True, blank=True)
 
     prediction = models.JSONField(null=True, blank=True)
 
