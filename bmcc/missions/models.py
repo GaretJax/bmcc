@@ -1,5 +1,6 @@
 from django.contrib.gis.db import models as gis_models
 from django.db import models
+from django.urls import reverse
 
 from bmcc.fields import UUIDAutoField
 
@@ -20,6 +21,9 @@ class Mission(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        return reverse("missions:detail", kwargs={"mission_id": self.pk})
 
 
 class LaunchSiteCandidate(models.Model):

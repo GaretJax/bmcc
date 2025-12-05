@@ -1,0 +1,118 @@
+{% extends "tracking/base.html" %}
+
+{% block title %}Mission: {{ mission.name }}{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+    .page-header { display: flex; align-items: baseline; gap: 0.75rem; }
+    .pill { border: 1px solid #ccc; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.9rem; color: #444; }
+    .muted { color: #555; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+    .stat { background: #f6f8fa; border-radius: 6px; padding: 0.75rem; border: 1px solid #e1e4e8; }
+    .stat .label { font-size: 0.9rem; color: #555; }
+    .stat .value { font-size: 1.6rem; font-weight: bold; }
+    .asset-header { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+    .subline { margin: 0; color: #555; }
+    .beacon-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .beacon-card { border: 1px solid #d0d7de; border-radius: 6px; padding: 0.75rem; background: #fff; }
+    .beacon-title { font-weight: bold; margin-bottom: 0.25rem; }
+    .status { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.85rem; border: 1px solid #d0d7de; }
+    .status-active { background: #e6f4ea; color: #1b5e20; border-color: #c8e6c9; }
+    .status-inactive { background: #f8e6e6; color: #86181d; border-color: #f1c0c0; }
+    .ping-row { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.95rem; }
+    .ping-row .label { color: #555; }
+    .empty-state { text-align: center; color: #555; padding: 1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ mission.name }}</h1>
+    <span class="pill">Mission</span>
+</div>
+<p class="muted">
+    {{ mission.description|default:"No description provided for this mission." }}
+</p>
+
+<section class="card">
+    <h2>Overview</h2>
+    <div class="stats" aria-label="Mission summary">
+        <div class="stat">
+            <div class="label">Assets</div>
+            <div class="value">{{ assets|length }}</div>
+        </div>
+        <div class="stat">
+            <div class="label">Beacons</div>
+            <div class="value">{{ beacon_count }}</div>
+        </div>
+        <div class="stat">
+            <div class="label">Launch sites</div>
+            <div class="value">{{ mission.launch_site_candidates.all|length }}</div>
+        </div>
+    </div>
+</section>
+
+{% for asset in assets %}
+<section class="card">
+    <div class="asset-header">
+        <div>
+            <h2>{{ asset.name }}</h2>
+            <p class="subline">
+                {{ asset.get_asset_type_display }}
+                {% if asset.callsign %} &middot; {{ asset.callsign }}{% endif %}
+            </p>
+        </div>
+        <div class="muted">Beacons: {{ asset.beacons.all|length }}</div>
+    </div>
+    {% if asset.notes %}
+        <p>{{ asset.notes }}</p>
+    {% endif %}
+
+    <div class="beacon-grid">
+        {% for beacon in asset.beacons.all %}
+            <div class="beacon-card">
+                <div class="beacon-title">
+                    {{ beacon.identifier }}
+                    <span class="status {% if beacon.active %}status-active{% else %}status-inactive{% endif %}">
+                        {% if beacon.active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                </div>
+                {% if beacon.description %}
+                    <p class="muted">{{ beacon.description }}</p>
+                {% endif %}
+                {% with ping=beacon.latest_ping.0 %}
+                    {% if ping %}
+                        <div class="ping-row">
+                            <span class="label">Last ping</span>
+                            <span>{{ ping.reported_at|date:"Y-m-d H:i" }}</span>
+                        </div>
+                        <div class="ping-row">
+                            <span class="label">Position</span>
+                            <span>
+                                {{ ping.latitude|floatformat:5 }},
+                                {{ ping.longitude|floatformat:5 }}
+                            </span>
+                        </div>
+                        {% if ping.altitude %}
+                            <div class="ping-row">
+                                <span class="label">Altitude</span>
+                                <span>{{ ping.altitude }} m</span>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <p class="muted">No pings received yet.</p>
+                    {% endif %}
+                {% endwith %}
+            </div>
+        {% empty %}
+            <p class="muted">This asset has no beacons yet.</p>
+        {% endfor %}
+    </div>
+</section>
+{% empty %}
+<section class="card empty-state">
+    No assets assigned to this mission yet.
+</section>
+{% endfor %}
+{% endblock %}

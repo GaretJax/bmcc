@@ -1,6 +1,7 @@
 from django.db.models import Prefetch
 from django.http import HttpResponse
 from django.urls import reverse
+from django.views.generic import DetailView
 
 import simplekml
 
@@ -17,6 +18,45 @@ ICON_BY_ASSET_TYPE = {
         "http://maps.google.com/mapfiles/kml/shapes/woman.png"
     ),
 }
+
+
+class MissionDetailView(DetailView):
+    queryset = models.Mission.objects.prefetch_related(
+        "launch_site_candidates"
+    )
+    template_name = "missions/mission_detail.html"
+    context_object_name = "mission"
+    pk_url_kwarg = "mission_id"
+
+    def get_assets(self):
+        return list(
+            self.object.assets.order_by("asset_type", "name").prefetch_related(
+                Prefetch(
+                    "beacons",
+                    queryset=Beacon.objects.order_by(
+                        "identifier"
+                    ).prefetch_related(
+                        Prefetch(
+                            "pings",
+                            queryset=Ping.objects.filter(
+                                mission=self.object
+                            ).order_by("-reported_at", "-created_at")[:1],
+                            to_attr="latest_ping",
+                        )
+                    ),
+                )
+            )
+        )
+
+    def get_context_data(self, **kwargs):
+        assets = self.get_assets()
+        kwargs.update(
+            {
+                "assets": assets,
+                "beacon_count": sum(len(a.beacons.all()) for a in assets),
+            }
+        )
+        return super().get_context_data(**kwargs)
 
 
 def kml_entrypoint(request, mission_id):
