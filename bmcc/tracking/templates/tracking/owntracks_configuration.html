@@ -5,38 +5,38 @@
 {% block extra_head %}
 {{ block.super }}
 <style>
-    .grid { display: grid; gap: 1rem; grid-template-columns: 1fr; align-items: center; }
     #qrcode { width: 100%; }
 </style>
 {% endblock %}
 
 {% block content %}
-<h1>OwnTracks configuration</h1>
-<p>Mission: {{ beacon.asset.mission.name }}</p>
-<p>Asset: {{ beacon.asset.name }}</p>
-<p>Beacon: {{ beacon.identifier }}</p>
-
-<section class="card">
-    <h2>Quick setup</h2>
-    <div class="grid">
-        <div>
+<div class="card">
+    <div class="grid-x grid-margin-y">
+        <div class="cell">
+            <h2 class="h4">OwnTracks configuration</h2>
+            <p class="muted">
+                Mission: {{ beacon.asset.mission.name }} &mdash;
+                Asset: {{ beacon.asset.name }} &mdash;
+                Beacon: {{ beacon.identifier }}
+            </p>
+        </div>
+        <div class="cell large-6">
+            <h3 class="h5">Quick setup</h3>
             <p>Scan this QR code with the OwnTracks app to apply the configuration.</p>
             <div id="qrcode" aria-label="OwnTracks configuration QR code"></div>
         </div>
-        <div>
+        <div class="cell large-6">
+            <h3 class="h5">Open on device</h3>
             <p>You can also open the configuration link directly on the device:</p>
             <p><a href="{{ owntracks_url }}">{{ owntracks_url }}</a></p>
         </div>
+        <div class="cell">
+            <h3 class="h5">Manual settings</h3>
+            <pre class="callout">{{ config_json }}</pre>
+            <p class="muted">The configuration uses HTTP reporting and does not require authentication.</p>
+        </div>
     </div>
-</section>
-
-<section class="card">
-    <h2>Manual settings</h2>
-    <div>
-      <pre>{{ config_json }}</pre>
-    </div>
-    <p>The configuration uses HTTP reporting and does not require authentication.</p>
-</section>
+</div>
 {% endblock %}
 
 {% block extra_body %}

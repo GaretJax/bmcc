@@ -2,17 +2,28 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Ballooning Mission Control{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/foundation-sites@6.8.1/dist/css/foundation.min.css">
     <style>
-        body { font-family: sans-serif; margin: 2rem auto; max-width: 720px; line-height: 1.5; }
-        h1, h2 { margin-bottom: 0.5rem; }
-        .card { border: 1px solid #ccc; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem; }
-        a { color: #0047ab; }
+        body { background: #f6f8fb; }
+        .page-shell { max-width: 1100px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+        .header { margin-bottom: 1.5rem; }
+        .header h1 { margin-bottom: 0.25rem; }
+        .card { background: #fff; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); padding: 1.25rem; border: 1px solid #e6e8eb; }
+        .muted { color: #5c6c7c; }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    {% block content %}{% endblock %}
+    <div class="page-shell">
+        <header class="header">
+            {% block header %}{% endblock %}
+        </header>
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
     {% block extra_body %}{% endblock %}
 </body>
 </html>

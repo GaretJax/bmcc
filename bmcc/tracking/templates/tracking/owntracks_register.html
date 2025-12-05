@@ -3,31 +3,37 @@
 {% block title %}Register OwnTracks device{% endblock %}
 
 {% block content %}
-<h1>Register new OwnTracks device</h1>
-<p>Mission: {{ mission.name }}</p>
-<form method="post">
-    {% csrf_token %}
-    <div class="card">
-        <div class="field" style="margin-bottom: 0.75rem;">
-            <label for="id_asset_name" style="font-weight: bold; display: block; margin-bottom: 0.25rem;">Asset name</label>
-            {{ form.asset_name }}
-            {% if form.asset_name.errors %}
-                <div class="errors" style="color: #b30000; margin-top: 0.25rem;">{{ form.asset_name.errors|join:", " }}</div>
-            {% endif %}
-        </div>
-        <div class="field" style="margin-bottom: 0.75rem;">
-            <label for="id_beacon_identifier" style="font-weight: bold; display: block; margin-bottom: 0.25rem;">Beacon identifier</label>
-            {{ form.beacon_identifier }}
-            {% if form.beacon_identifier.help_text %}
-                <small>{{ form.beacon_identifier.help_text }}</small>
-            {% endif %}
-            {% if form.beacon_identifier.errors %}
-                <div class="errors" style="color: #b30000; margin-top: 0.25rem;">{{ form.beacon_identifier.errors|join:", " }}</div>
-            {% endif %}
-        </div>
-        <div>
-            <button type="submit" style="padding: 0.6rem 1rem; font-size: 1rem; cursor: pointer;">Create tracker</button>
+<div class="card">
+    <div class="grid-x align-justify align-middle">
+        <div class="cell auto">
+            <h2 class="h4">Register OwnTracks device</h2>
+            <p class="muted">Mission: {{ mission.name }}</p>
         </div>
     </div>
-</form>
+    <form method="post" class="grid-x grid-margin-x">
+        {% csrf_token %}
+        <div class="cell medium-6">
+            <label>Asset name
+                {{ form.asset_name }}
+            </label>
+            {% if form.asset_name.errors %}
+                <p class="form-error is-visible">{{ form.asset_name.errors|join:", " }}</p>
+            {% endif %}
+        </div>
+        <div class="cell medium-6">
+            <label>Beacon identifier
+                {{ form.beacon_identifier }}
+            </label>
+            {% if form.beacon_identifier.help_text %}
+                <p class="help-text">{{ form.beacon_identifier.help_text }}</p>
+            {% endif %}
+            {% if form.beacon_identifier.errors %}
+                <p class="form-error is-visible">{{ form.beacon_identifier.errors|join:", " }}</p>
+            {% endif %}
+        </div>
+        <div class="cell">
+            <button type="submit" class="button primary">Create tracker</button>
+        </div>
+    </form>
+</div>
 {% endblock %}
