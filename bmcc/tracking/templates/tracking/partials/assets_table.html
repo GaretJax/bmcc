@@ -23,28 +23,21 @@
         <thead>
             <tr>
                 <th>Asset</th>
-                <th>Beacon</th>
-                <th>Latitude</th>
-                <th>Longitude</th>
+                <th>Coordinates</th>
                 <th>Altitude</th>
                 <th>Reported at</th>
+                <th>Reported by</th>
             </tr>
         </thead>
         <tbody>
             {% for asset in assets %}
                 <tr>
                     <td>
-{% url 'missions:asset_detail' mission.pk asset.pk as asset_detail_url %}
-                        <a href="{{ asset_detail_url }}">{{ asset.name }}</a>
-                    </td>
-                    <td>{{ asset.last_ping_beacon|default:"—" }}</td>
-                    <td>
-                        {% if asset.last_ping_position %}
-                            {{ asset.last_ping_position.y|floatformat:5 }}
-                        {% else %}—{% endif %}
+                        <a href="{% url 'missions:asset_detail' mission.pk asset.pk %}">{{ asset.name }}</a>
                     </td>
                     <td>
                         {% if asset.last_ping_position %}
+                            {{ asset.last_ping_position.y|floatformat:5 }},
                             {{ asset.last_ping_position.x|floatformat:5 }}
                         {% else %}—{% endif %}
                     </td>
@@ -58,6 +51,7 @@
                             {{ asset.last_ping_reported_at|date:"Y-m-d H:i" }}
                         {% else %}No pings{% endif %}
                     </td>
+                    <td>{{ asset.last_ping_beacon|default:"—" }}</td>
                 </tr>
             {% empty %}
                 <tr>
