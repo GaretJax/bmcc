@@ -2,11 +2,11 @@ import logging
 from typing import Any
 
 from django.conf import settings
-from django.contrib.gis.geos import Point
 from django.utils.dateparse import parse_datetime
 
 import requests
 
+from bmcc.fields import Coordinate
 from bmcc.predictions.models import Prediction
 
 
@@ -83,15 +83,15 @@ class TawhiriBackend:
         land = descent["trajectory"][-1]
 
         prediction.bursting_at = parse_datetime(burst["datetime"])
-        prediction.burst_location = Point(
+        prediction.burst_location = Coordinate(
             burst["longitude"],
             burst["latitude"],
         )
         prediction.burst_altitude = burst["altitude"]
 
         prediction.landing_at = parse_datetime(land["datetime"])
-        prediction.land_location = Point(
+        prediction.landing_location = Coordinate(
             land["longitude"],
             land["latitude"],
         )
-        prediction.land_altitude = land["altitude"]
+        prediction.landing_altitude = land["altitude"]

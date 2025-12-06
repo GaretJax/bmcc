@@ -1,4 +1,5 @@
 {% extends "missions/base.html" %}
+{% load tz %}
 
 {% block title %}Edit mission parameters{% endblock %}
 
@@ -36,6 +37,25 @@
                 <p class="form-error is-visible">{{ form.descent_rate.errors|join:", " }}</p>
             {% endif %}
         </div>
+        <div class="cell medium-12">
+            {% get_current_timezone as current_tz %}
+            <p class="muted" style="margin-bottom: 0.4rem;">Mission window (optional start/end bounds for pings and charts). Times shown in {{ current_tz }}.</p>
+        </div>
+        <div class="cell medium-6">
+            <label>Mission window start
+                {{ form.mission_window.subwidgets.0 }}
+            </label>
+        </div>
+        <div class="cell medium-6">
+            <label>Mission window end
+                {{ form.mission_window.subwidgets.1 }}
+            </label>
+        </div>
+        {% if form.mission_window.errors %}
+            <div class="cell medium-12">
+                <p class="form-error is-visible">{{ form.mission_window.errors|join:", " }}</p>
+            </div>
+        {% endif %}
         <div class="cell medium-12">
             <button type="submit" class="button primary">Save</button>
             <a class="button hollow" href="{% url 'missions:detail' mission_id=mission.pk %}">Cancel</a>

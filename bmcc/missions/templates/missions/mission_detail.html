@@ -1,4 +1,5 @@
 {% extends "missions/base.html" %}
+{% load tz %}
 
 {% block title %}Mission: {{ mission.name }}{% endblock %}
 
@@ -6,14 +7,22 @@
 {{ block.super }}
 {% endblock %}
 
+{% block header %}
+<div class="grid-x align-justify align-middle">
+    <div class="cell shrink">
+        <h1 class="h3">Mission Overview</h1>
+    </div>
+</div>
+{% endblock %}
+
 {% block content %}
-<div class="grid-x grid-margin-x">
+<!--div class="grid-x grid-margin-x">
     <div class="cell">
         <p class="muted">
             {{ mission.description|default:"No description provided for this mission." }}
         </p>
     </div>
-</div>
+</div-->
 
 <div class="grid-x grid-margin-x">
     <div class="cell medium-4">
@@ -57,6 +66,21 @@
             <tr>
                 <th>Descent speed</th>
                 <td>{% if mission.descent_rate %}{{ mission.descent_rate }} m/s{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+                <th>Mission window</th>
+                <td>
+                    {% if mission.mission_window %}
+                        {% get_current_timezone as current_tz %}
+                        {% if mission.mission_window.lower %}Start: {{ mission.mission_window.lower|date:"Y-m-d H:i T" }}{% else %}Start: —{% endif %}
+                        <br>
+                        {% if mission.mission_window.upper %}End: {{ mission.mission_window.upper|date:"Y-m-d H:i T" }}{% else %}End: —{% endif %}
+                        <br>
+                        <span class="muted">Times shown in {{ current_tz }}</span>
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
             </tr>
         </tbody>
     </table>

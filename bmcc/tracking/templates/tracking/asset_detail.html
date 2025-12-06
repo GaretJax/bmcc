@@ -6,6 +6,7 @@
 {{ block.super }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 {% endblock %}
 
 {% block content %}
@@ -67,6 +68,19 @@
     {% endif %}
 </div>
 
+{% if asset.pings.exists %}
+<div class="card">
+    <div class="grid-x align-justify align-middle" style="margin-bottom: 0.75rem;">
+        <div class="cell auto">
+            <h3 class="h5">Track</h3>
+            <p class="muted">All pings plotted on map</p>
+        </div>
+    </div>
+    <div id="asset-track-map" style="height: 360px; border: 1px solid #e0e0e0;"></div>
+    {{ path_points|json_script:"asset-track-points" }}
+</div>
+{% endif %}
+
 <div class="card">
     <div class="grid-x align-justify align-middle"
          style="margin-bottom: 0.75rem;">
@@ -110,4 +124,63 @@
     </div>
     {% include "tracking/partials/asset_horizontal_speed_chart.html" %}
 </div>
+
+{% if asset.launched_at and asset.launch_site %}
+<div class="card">
+    <div class="grid-x align-justify align-middle"
+         style="margin-bottom: 0.75rem;">
+        <div class="cell auto">
+            <h3 class="h5">Downrange distance</h3>
+            <p class="muted">Ground distance from launch site (m)</p>
+        </div>
+    </div>
+    {% include "tracking/partials/asset_downrange_chart.html" %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_body %}
+{{ block.super }}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+  .emoji-icon {
+    font-size: 2em;
+    text-align: center;
+    line-height: 24px;
+  }
+</style>
+<script>
+    (function () {
+        var mapEl = document.getElementById("asset-track-map");
+        if (!mapEl || !window.L) { return; }
+        var pointsEl = document.getElementById("asset-track-points");
+        var points = [];
+        try {
+            points = JSON.parse(pointsEl.textContent) || [];
+        } catch (e) {
+            points = [];
+        }
+        if (!points.length) { return; }
+        var first = points[0];
+        var map = L.map("asset-track-map").setView([first[1], first[2]], 9);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "&copy; OpenStreetMap contributors"
+        }).addTo(map);
+        var coords = points.map(function (p) { return [p[1], p[2]]; });
+        var line = L.polyline(coords, { color: "#000" }).addTo(map);
+        map.fitBounds(line.getBounds(), { padding: [10, 10] });
+        {% if asset.launched_at and asset.launch_site %}
+        var launchIcon = L.divIcon({
+            html: "&#x1F388",
+            className: "emoji-icon",
+            iconSize: [24, 24],
+            iconAnchor: [18, 24],
+        });
+        L.marker(
+            [{{ asset.launch_site.location.y }}, {{ asset.launch_site.location.x }}],
+            { title: "Launch", icon: launchIcon }
+        ).addTo(map);
+        {% endif %}
+    }());
+</script>
 {% endblock %}

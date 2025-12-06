@@ -1,6 +1,10 @@
 from django.contrib.gis.db import models
 
-from bmcc.fields import ConfigurableInstanceField, UUIDAutoField
+from bmcc.fields import (
+    ConfigurableInstanceField,
+    CoordinateField,
+    UUIDAutoField,
+)
 from bmcc.missions.models import LaunchSite, Mission
 
 from . import constants, managers
@@ -94,7 +98,7 @@ class Ping(models.Model):
         on_delete=models.CASCADE,
     )
     reported_at = models.DateTimeField()
-    position = models.PointField(geography=True, dim=2)
+    position = CoordinateField()
     altitude = models.IntegerField(null=True, blank=True)
     accuracy = models.IntegerField(null=True, blank=True)
     speed = models.IntegerField(null=True, blank=True)

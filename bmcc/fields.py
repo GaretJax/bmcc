@@ -1,5 +1,7 @@
 import uuid
 
+from django.contrib.gis.db import models as geo_models
+from django.contrib.gis.geos import Point
 from django.db import models
 from django.db.models import UUIDField
 from django.db.models.base import NOT_PROVIDED
@@ -171,3 +173,32 @@ class ConfigurableInstanceField:
                 self, classpath_field_name, config_field_name
             ),
         )
+
+
+class Coordinate(Point):
+    @property
+    def latitude(self):
+        return self.y
+
+    @property
+    def longitude(self):
+        return self.x
+
+    @property
+    def abs_longitude(self):
+        if self.longitude < 0:
+            return 360 + self.longitude
+        return self.longitude
+
+    lat = latitude
+    lon = longitude
+    abs_lon = abs_longitude
+
+
+class CoordinateField(geo_models.PointField):
+    geom_class = Coordinate
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("geography", True)
+        kwargs.setdefault("dim", 2)
+        super().__init__(*args, **kwargs)

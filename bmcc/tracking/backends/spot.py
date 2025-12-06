@@ -3,10 +3,11 @@ import logging
 from datetime import datetime
 
 from django.conf import settings
-from django.contrib.gis.geos import Point
 
 import attrs
 import requests
+
+from bmcc.fields import Coordinate
 
 from .. import models
 
@@ -45,7 +46,9 @@ class SpotBackend:
                     )
                     continue
                 reported_at = datetime.fromisoformat(message["dateTime"])
-                position = Point(message["longitude"], message["latitude"])
+                position = Coordinate(
+                    message["longitude"], message["latitude"]
+                )
                 # altitude = message["altitude"]
                 ping, created = self.beacon.pings.get_or_create(
                     beacon=self.beacon,

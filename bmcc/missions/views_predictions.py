@@ -1,8 +1,8 @@
-from django.contrib.gis.geos import Point
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from bmcc.fields import Coordinate
 from bmcc.predictions.models import Prediction
 from bmcc.predictions.tasks import run_prediction
 
@@ -27,7 +27,7 @@ def run_launch_site_prediction(request, mission_id, launch_site_id):
 
     prediction = Prediction.objects.create(
         launch_at=launch_site.intended_launch_at or timezone.now(),
-        launch_location=Point(
+        launch_location=Coordinate(
             launch_site.location.x,
             launch_site.location.y,
         ),

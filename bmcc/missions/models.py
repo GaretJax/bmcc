@@ -1,9 +1,8 @@
-from django.contrib.gis.db import models as gis_models
 from django.contrib.postgres.fields import DateTimeRangeField
 from django.db import models
 from django.urls import reverse
 
-from bmcc.fields import UUIDAutoField
+from bmcc.fields import CoordinateField, UUIDAutoField
 
 
 class Mission(models.Model):
@@ -36,7 +35,7 @@ class LaunchSite(models.Model):
         on_delete=models.CASCADE,
     )
     name = models.CharField(max_length=255)
-    location = gis_models.PointField(geography=True, dim=2)
+    location = CoordinateField()
     altitude = models.FloatField(null=True, blank=True)
     intended_launch_at = models.DateTimeField(
         null=True, blank=True, help_text="Planned datetime for launch"

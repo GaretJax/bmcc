@@ -1,23 +1,24 @@
 {% extends "missions/base.html" %}
 
-{% block title %}Launch sites{% endblock %}
+{% block title %}Launch Sites{% endblock %}
+
+{% block header %}
+<div class="grid-x align-justify align-middle">
+    <div class="cell shrink">
+        <h1 class="h3">Launch Sites</h1>
+        <p class="muted">Candidate launch sites proposed for this mission</p>
+    </div>
+    <div class="cell shrink">
+        <a class="button primary small"
+            href="{% url 'missions:launch_site_create' mission_id=mission.pk %}">
+            Add launch site
+        </a>
+    </div>
+</div>
+{% endblock %}
 
 {% block content %}
 <div class="card">
-    <div class="grid-x align-justify align-middle"
-         style="margin-bottom: 0.75rem;">
-        <div class="cell auto">
-            <h2 class="h4">Launch site candidates</h2>
-            <p class="muted">Launch points proposed for this mission</p>
-        </div>
-        <div class="cell shrink">
-            <a class="button primary small"
-               href="{% url 'missions:launch_site_create' mission_id=mission.pk %}">
-                Add launch site
-            </a>
-        </div>
-        <span class="label secondary">{{ mission.name }}</span>
-    </div>
     <table class="stack">
         <thead>
             <tr>

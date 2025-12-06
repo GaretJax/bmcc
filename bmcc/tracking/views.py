@@ -3,7 +3,6 @@ import json
 import logging
 
 from django import http
-from django.contrib.gis.geos import Point
 from django.http import HttpRequest, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -13,6 +12,8 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, UpdateView
 from django.views.generic.edit import ModelFormMixin
+
+from bmcc.fields import Coordinate
 
 from . import constants, forms, models
 
@@ -183,7 +184,7 @@ class BeaconUpdateView(UpdateView):
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON payload"}, status=400)
 
-        position = Point(
+        position = Coordinate(
             float(payload["longitude"]), float(payload["latitude"])
         )
         altitude = payload.get("altitude")

@@ -86,8 +86,8 @@ def generate_predictions_for_future_launches(self):
     logger.info(
         "Launch site prediction generation complete",
         extra={
-            "created": created,
-            "updated": updated,
+            "created_at": created,
+            "updated_at": updated,
             "candidate_count": len(candidates),
         },
     )

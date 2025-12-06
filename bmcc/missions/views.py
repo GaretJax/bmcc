@@ -117,7 +117,7 @@ class AssetDetailView(DetailView):
 
     def get_queryset(self):
         return (
-            Asset.objects.select_related("mission")
+            Asset.objects.select_related("mission", "launch_site")
             .prefetch_related("beacons", "beacons__pings")
             .filter(mission__pk=self.kwargs["mission_id"])
         )
@@ -148,10 +148,18 @@ class AssetDetailView(DetailView):
             if mission.mission_window
             else None,
         }
-        beacon_data = ping_qs.order_by("reported_at").values_list(
-            "beacon__identifier", "reported_at", "altitude", "position"
+        beacon_data = list(
+            ping_qs.order_by("reported_at").values_list(
+                "beacon__identifier", "reported_at", "altitude", "position"
+            )
         )
         horizontal_series = {}
+        downrange_series = {}
+        launch_point = (
+            self.object.launch_site.location
+            if self.object.launch_site_id
+            else None
+        )
         for beacon_id, reported_at, altitude, position in beacon_data:
             altitude_series.setdefault(beacon_id, []).append(
                 (reported_at, altitude)
@@ -161,6 +169,10 @@ class AssetDetailView(DetailView):
             horizontal_series.setdefault(beacon_id, []).append(
                 (reported_at, position)
             )
+            if launch_point and position:
+                downrange_series.setdefault(beacon_id, []).append(
+                    (reported_at, launch_point, position)
+                )
 
         speed_chart_data = {}
         for beacon_id, points in speed_series.items():
@@ -204,10 +216,28 @@ class AssetDetailView(DetailView):
                 derived.append((curr_t, distance / delta_t))
             horizontal_chart_data[beacon_id] = derived
 
+        downrange_chart_data = {}
+        if launch_point:
+            for beacon_id, points in downrange_series.items():
+                distances = []
+                for reported_at, origin, dest in points:
+                    distances.append(
+                        (reported_at, haversine_meters(origin, dest))
+                    )
+                downrange_chart_data[beacon_id] = distances
+
         kwargs["altitude_series"] = altitude_series
         kwargs["speed_series"] = speed_chart_data
         kwargs["horizontal_speed_series"] = horizontal_chart_data
+        kwargs["downrange_series"] = downrange_chart_data
         kwargs["refreshed_at"] = timezone.now()
+        path_points = []
+        for _, reported_at, _, position in beacon_data:
+            if position:
+                path_points.append(
+                    [reported_at.isoformat(), position.y, position.x]
+                )
+        kwargs["path_points"] = path_points
         return super().get_context_data(**kwargs)
 
     def get_template_names(self):
@@ -221,6 +251,8 @@ class AssetDetailView(DetailView):
                 return ["tracking/partials/asset_speed_chart.html"]
             if section == "horizontal_speed":
                 return ["tracking/partials/asset_horizontal_speed_chart.html"]
+            if section == "downrange":
+                return ["tracking/partials/asset_downrange_chart.html"]
             if section == "pings":
                 return ["tracking/partials/asset_pings_table.html"]
             return ["tracking/partials/asset_pings_table.html"]

@@ -2,10 +2,11 @@ from datetime import UTC, datetime
 from urllib.parse import urljoin
 
 from django.conf import settings
-from django.contrib.gis.geos import Point
 from django.urls import reverse
 
 import attrs
+
+from bmcc.fields import Coordinate
 
 from .. import models
 
@@ -20,7 +21,7 @@ class OwnTracksBackend:
             raise ValueError("Not a location message")
 
         ping = self.beacon.pings.create(
-            position=Point(data["lon"], data["lat"]),
+            position=Coordinate(data["lon"], data["lat"]),
             altitude=data.get("alt", None),
             accuracy=data.get("acc", None),
             speed=data.get("vel", None),

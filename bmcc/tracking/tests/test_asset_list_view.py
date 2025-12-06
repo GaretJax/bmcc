@@ -1,9 +1,9 @@
-from django.contrib.gis.geos import Point
 from django.urls import reverse
 from django.utils import timezone
 
 import pytest
 
+from bmcc.fields import Coordinate
 from bmcc.missions.models import Mission
 from bmcc.tracking import constants
 from bmcc.tracking.models import Asset, Beacon, Ping
@@ -28,7 +28,7 @@ def test_asset_list_shows_latest_ping(client):
         asset=asset,
         beacon=beacon,
         reported_at=now - timezone.timedelta(minutes=5),
-        position=Point(1.0, 2.0),
+        position=Coordinate(1.0, 2.0),
         altitude=100,
     )
     latest = Ping.objects.create(
@@ -36,7 +36,7 @@ def test_asset_list_shows_latest_ping(client):
         asset=asset,
         beacon=beacon,
         reported_at=now,
-        position=Point(3.33333, 4.44444),
+        position=Coordinate(3.33333, 4.44444),
         altitude=150,
     )
 

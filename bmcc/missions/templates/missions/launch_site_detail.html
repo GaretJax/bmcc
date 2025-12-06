@@ -43,34 +43,50 @@
         <thead>
             <tr>
                 <th>Created</th>
-                <th>Ascent / Burst / Descent</th>
+                <th>Launch</th>
+                <th>Ascent</th>
                 <th>Burst</th>
+                <th>Descent</th>
                 <th>Landing</th>
             </tr>
         </thead>
         <tbody>
             {% for prediction in launch_site.prediction_history.all|slice:":3" %}
-                <tr>
-                    <td>{{ prediction.created_at|date:"Y-m-d H:i" }}</td>
-                    <td>
-                        {{ prediction.additional_parameters.ascent_rate|default:"—" }} /
-                        {{ prediction.additional_parameters.burst_altitude|default:"—" }} /
-                        {{ prediction.additional_parameters.descent_rate|default:"—" }}
-                    </td>
-                    <td>
-                        {% if prediction.bursting_at %}{{ prediction.bursting_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}<br>
-                        {% if prediction.burst_altitude %}{{ prediction.burst_altitude }} m{% else %}—{% endif %}<br>
-                        {% if prediction.burst_location %}{{ prediction.burst_location.y|floatformat:5 }}, {{ prediction.burst_location.x|floatformat:5 }}{% else %}—{% endif %}
-                    </td>
-                    <td>
-                        {% if prediction.landing_at %}{{ prediction.landing_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}<br>
-                        {% if prediction.landing_location %}{{ prediction.landing_location.y|floatformat:5 }}, {{ prediction.landing_location.x|floatformat:5 }}{% else %}—{% endif %}
-                    </td>
-                </tr>
+              <tr>
+                <td>{{ prediction.created_at|date:"Y-m-d H:i" }}</td>
+                <td>
+                    {% if prediction.launch_at %}{{ prediction.launch_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}<br>
+                    {% if prediction.launch_altitude %}{{ prediction.launch_altitude|floatformat:0 }} m{% else %}—{% endif %}<br>
+                    {% if prediction.launch_location %}{{ prediction.launch_location.y|floatformat:5 }}, {{ prediction.launch_location.x|floatformat:5 }}{% else %}—{% endif %}
+
+                </td>
+                <td>
+                    {{ prediction.additional_parameters.ascent_rate|default:"—" }} m/s
+                    {% if prediction.launch_at and prediction.bursting_at %}<br>
+                      {{ prediction.launch_at|timesince:prediction.bursting_at }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if prediction.bursting_at %}{{ prediction.bursting_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}<br>
+                    {% if prediction.burst_altitude %}{{ prediction.burst_altitude|floatformat:0 }} m{% else %}{{ prediction.additional_parameters.burst_altitude|floatformat:0|default:"—" }}{% endif %}<br>
+                    {% if prediction.burst_location %}{{ prediction.burst_location.y|floatformat:5 }}, {{ prediction.burst_location.x|floatformat:5 }}{% else %}—{% endif %}
+                </td>
+                <td>
+                    {{ prediction.additional_parameters.descent_rate|default:"—" }} m/s
+                    {% if prediction.bursting_at and prediction.landing_at %}<br>
+                      {{ prediction.bursting_at|timesince:prediction.landing_at }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if prediction.landing_at %}{{ prediction.landing_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}<br>
+                    {% if prediction.landing_altitude %}{{ prediction.landing_altitude|floatformat:0 }} m{% else %}—{% endif %}<br>
+                    {% if prediction.landing_location %}{{ prediction.landing_location.y|floatformat:5 }}, {{ prediction.landing_location.x|floatformat:5 }}{% else %}—{% endif %}
+                </td>
+              </tr>
             {% empty %}
-                <tr>
-                    <td colspan="4" class="text-center muted">No predictions yet.</td>
-                </tr>
+              <tr>
+                  <td colspan="4" class="text-center muted">No predictions yet.</td>
+              </tr>
             {% endfor %}
         </tbody>
     </table>
@@ -84,6 +100,13 @@
 {{ block.super }}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+  .emoji-icon {
+    font-size: 2em;
+    text-align: center;
+    line-height: 24px;
+  }
+</style>
 <script>
     (function () {
         var mapEl = document.getElementById("launch-map");
@@ -94,7 +117,7 @@
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution: "&copy; OpenStreetMap contributors"
         }).addTo(map);
-        var launchPoint = {% if last_prediction and last_prediction.launch_location %}[{{ last_prediction.launch_location.y }}, {{ last_prediction.launch_location.x }}]{% else %}[lat, lon]{% endif %};
+        var launchPoint = {% if last_prediction and last_prediction.launch_location %}[{{ last_prediction.launch_location.lat }}, {{ last_prediction.launch_location.abs_lon }}]{% else %}[lat, lon]{% endif %};
         var launchTime = {% if last_prediction and last_prediction.launch_at %}"{{ last_prediction.launch_at|date:"c" }}"{% elif launch_site.intended_launch_at %}"{{ launch_site.intended_launch_at|date:"c" }}"{% else %}null{% endif %};
         var launchAlt = {% if last_prediction and last_prediction.launch_altitude %}{{ last_prediction.launch_altitude }}{% elif launch_site.altitude %}{{ launch_site.altitude }}{% else %}null{% endif %};
         var burstPoint = {% if last_prediction and last_prediction.burst_location %}[{{ last_prediction.burst_location.y }}, {{ last_prediction.burst_location.x }}]{% else %}null{% endif %};
@@ -109,6 +132,35 @@
                 var pred = JSON.parse(predEl.textContent);
                 var coords = [];
                 var startPoint, burstPoint, landingPoint;
+                var launchIcon = L.divIcon({
+                    html: "&#x1F388",
+                    className: "emoji-icon",
+                    iconSize: [24, 24],
+                    iconAnchor: [18, 24],
+                    //popupAnchor: [1, -34],
+                });
+                var burstIcon = L.divIcon({
+                    html: "&#x1F4A5;",
+                    className: "emoji-icon",
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 14],
+                });
+                var landingIcon = L.divIcon({
+                    html: "&#x1F3C1;",
+                    className: "emoji-icon",
+                    iconSize: [24, 24],
+                    iconAnchor: [1, 25],
+                });
+                function formatPopup(label, time, altitude) {
+                    var parts = [label];
+                    if (time) {
+                        parts.push("Time: " + time);
+                    }
+                    if (altitude !== undefined && altitude !== null) {
+                        parts.push("Alt: " + altitude + " m");
+                    }
+                    return parts.join("<br>");
+                }
                 if (pred && pred.prediction) {
                     pred.prediction.forEach(function (segment, idx) {
                         (segment.trajectory || []).forEach(function (p, pIdx) {
@@ -132,9 +184,9 @@
                 }
                 if (launchPoint) {
                     L.marker(launchPoint, { title: "Launch", icon: launchIcon })
-                        .addTo(map)
-                        .bindPopup(formatPopup("Launch", launchTime, launchAlt));
+                        .addTo(map);
                 }
+              console.log(launchPoint, burstPoint);
                 if (!coords.length) {
                     var fallback = [];
                     if (launchPoint) { fallback.push(launchPoint); }
@@ -145,35 +197,9 @@
                     }
                 }
                 if (coords.length) {
-                    var line = L.polyline(coords, { color: "#1779ba" });
+                    var line = L.polyline(coords, { color: "#000" });
                     line.addTo(map);
                     map.fitBounds(line.getBounds(), { padding: [10, 10] });
-                    var launchIcon = L.icon({
-                        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-                        iconSize: [25, 41],
-                        iconAnchor: [12, 41],
-                        popupAnchor: [1, -34],
-                    });
-                    var burstIcon = L.divIcon({
-                        html: "&#x1F4A5;",
-                        className: "burst-icon",
-                        iconSize: [24, 24],
-                    });
-                    var landingIcon = L.divIcon({
-                        html: "&#x1F6A7;",
-                        className: "landing-icon",
-                        iconSize: [24, 24],
-                    });
-                    function formatPopup(label, time, altitude) {
-                        var parts = [label];
-                        if (time) {
-                            parts.push("Time: " + time);
-                        }
-                        if (altitude !== undefined && altitude !== null) {
-                            parts.push("Alt: " + altitude + " m");
-                        }
-                        return parts.join("<br>");
-                    }
                     if (burstPoint) {
                         L.marker(burstPoint, { title: "Burst", icon: burstIcon })
                             .addTo(map)

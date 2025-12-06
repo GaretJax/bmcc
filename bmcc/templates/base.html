@@ -101,12 +101,12 @@
 {% url 'missions:launch_site_list' mission_id=nav_mission.pk as launch_sites_url %}
                     <li>
                         <a href="{{ nav_mission.get_absolute_url }}">
-                            Mission overview
+                            Mission Overview
                         </a>
                     </li>
                     <li>
                         <a href="{{ launch_sites_url }}">
-                            Launch sites
+                            Launch Sites
                         </a>
                     </li>
                     <li>
@@ -122,7 +122,7 @@
                 {% else %}
                     <li>
                         <a aria-disabled="true" class="disabled">
-                            Mission overview
+                            Mission Overview
                         </a>
                     </li>
                     <li>
@@ -542,6 +542,132 @@
             return { minTime: minTime, maxTime: maxTime };
         }
 
+        function renderDownrangeChart(container) {
+            if (!window.Chart || !container) { return; }
+            var dataEl = container.querySelector("#downrange-series-data");
+            var canvas = container.querySelector("#downrange-chart");
+            if (!dataEl || !canvas) { return; }
+            canvas.parentElement.style.visibility = "hidden";
+            var seriesByBeacon = {};
+            try {
+                seriesByBeacon = JSON.parse(dataEl.textContent) || {};
+            } catch (e) {
+                canvas.parentElement.style.visibility = "visible";
+                return;
+            }
+            var boundsEl = container.querySelector("#chart-bounds-data");
+            var bounds = {};
+            if (boundsEl) {
+                try {
+                    bounds = JSON.parse(boundsEl.textContent) || {};
+                } catch (e) {
+                    bounds = {};
+                }
+            }
+            var datasets = [];
+            var palette = [
+                "#1779ba",
+                "#ff7f50",
+                "#2ca02c",
+                "#9467bd",
+                "#e377c2",
+                "#bcbd22",
+                "#17becf",
+            ];
+            var idx = 0;
+            Object.keys(seriesByBeacon).forEach(function (beacon) {
+                var points = (seriesByBeacon[beacon] || []).filter(function (
+                    item
+                ) {
+                    return item && item.length >= 2 && item[1] !== null;
+                });
+                datasets.push({
+                    label: beacon,
+                    data: points.map(function (item) {
+                        return { x: item[0], y: item[1] };
+                    }),
+                    borderColor: palette[idx % palette.length],
+                    backgroundColor: palette[idx % palette.length] + "33",
+                    tension: 0,
+                });
+                idx += 1;
+            });
+            var allTimes = datasets
+                .flatMap(function (ds) { return ds.data; })
+                .map(function (pt) { return pt.x; });
+            var minTime =
+                allTimes.length > 0
+                    ? Math.min.apply(
+                          null,
+                          allTimes.map(function (t) {
+                              return new Date(t).getTime();
+                          })
+                      )
+                    : null;
+            var maxTime =
+                allTimes.length > 0
+                    ? Math.max.apply(
+                          null,
+                          allTimes.map(function (t) {
+                              return new Date(t).getTime();
+                          })
+                      )
+                    : null;
+            var forcedMin =
+                bounds.start !== undefined && bounds.start !== null
+                    ? new Date(bounds.start).getTime()
+                    : null;
+            var forcedMax =
+                bounds.end !== undefined && bounds.end !== null
+                    ? new Date(bounds.end).getTime()
+                    : null;
+            if (container._chartInstance) {
+                container._chartInstance.data.datasets = datasets;
+                if (forcedMin !== null) {
+                    container._chartInstance.options.scales.x.min = forcedMin;
+                }
+                if (forcedMax !== null) {
+                    container._chartInstance.options.scales.x.max = forcedMax;
+                }
+                container._chartInstance.update();
+            } else {
+                container._chartInstance = new Chart(canvas, {
+                    type: "line",
+                    data: { datasets: datasets },
+                    options: {
+                        plugins: { legend: { display: true } },
+                        scales: {
+                            x: {
+                                type: "time",
+                                time: { tooltipFormat: "PPpp" },
+                                title: { display: true, text: "Time" },
+                                min:
+                                    forcedMin !== null
+                                        ? forcedMin
+                                        : minTime,
+                                max:
+                                    forcedMax !== null
+                                        ? forcedMax
+                                        : maxTime,
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: "Downrange distance (m)",
+                                },
+                                ticks: { padding: 12 },
+                                afterFit: function (scale) {
+                                    scale.width = Math.max(scale.width, 120);
+                                },
+                            },
+                        },
+                    },
+                });
+            }
+            canvas.parentElement.style.visibility = "visible";
+            return { minTime: minTime, maxTime: maxTime };
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
             var chartContainer = document.getElementById(
                 "asset-altitude-chart-wrapper"
@@ -552,6 +678,9 @@
             var horizontalContainer = document.getElementById(
                 "asset-horizontal-speed-chart-wrapper"
             );
+            var downrangeContainer = document.getElementById(
+                "asset-downrange-chart-wrapper"
+            );
             var altRange = chartContainer
                 ? renderAltitudeChart(chartContainer)
                 : null;
@@ -561,9 +690,15 @@
             var horizontalRange = horizontalContainer
                 ? renderHorizontalChart(horizontalContainer)
                 : null;
-            var ranges = [altRange, speedRange, horizontalRange].filter(
-                Boolean
-            );
+            var downrangeRange = downrangeContainer
+                ? renderDownrangeChart(downrangeContainer)
+                : null;
+            var ranges = [
+                altRange,
+                speedRange,
+                horizontalRange,
+                downrangeRange,
+            ].filter(Boolean);
             if (ranges.length > 0) {
                 var globalMin = Math.min.apply(
                     null,
@@ -597,6 +732,16 @@
                         globalMax;
                     horizontalContainer._chartInstance.update();
                 }
+                if (
+                    downrangeContainer
+                    && downrangeContainer._chartInstance
+                ) {
+                    downrangeContainer._chartInstance.options.scales.x.min =
+                        globalMin;
+                    downrangeContainer._chartInstance.options.scales.x.max =
+                        globalMax;
+                    downrangeContainer._chartInstance.update();
+                }
             }
 
             document.body.addEventListener("htmx:configRequest", function (e) {
@@ -618,7 +763,8 @@
                 el &&
                 (el.id === "asset-altitude-chart-wrapper" ||
                     el.id === "asset-speed-chart-wrapper" ||
-                    el.id === "asset-horizontal-speed-chart-wrapper")
+                    el.id === "asset-horizontal-speed-chart-wrapper" ||
+                    el.id === "asset-downrange-chart-wrapper")
             ) {
                 var chartContainer = document.getElementById(
                     "asset-altitude-chart-wrapper"
@@ -629,6 +775,9 @@
                 var horizontalContainer = document.getElementById(
                     "asset-horizontal-speed-chart-wrapper"
                 );
+                var downrangeContainer = document.getElementById(
+                    "asset-downrange-chart-wrapper"
+                );
                 var altRange = chartContainer
                     ? renderAltitudeChart(chartContainer)
                     : null;
@@ -638,9 +787,15 @@
                 var horizontalRange = horizontalContainer
                     ? renderHorizontalChart(horizontalContainer)
                     : null;
-                var ranges = [altRange, speedRange, horizontalRange].filter(
-                    Boolean
-                );
+                var downrangeRange = downrangeContainer
+                    ? renderDownrangeChart(downrangeContainer)
+                    : null;
+                var ranges = [
+                    altRange,
+                    speedRange,
+                    horizontalRange,
+                    downrangeRange,
+                ].filter(Boolean);
                 if (ranges.length > 0) {
                     var globalMin = Math.min.apply(
                         null,
@@ -677,6 +832,16 @@
                         horizontalContainer._chartInstance.options.scales.x.max =
                             globalMax;
                         horizontalContainer._chartInstance.update();
+                    }
+                    if (
+                        downrangeContainer
+                        && downrangeContainer._chartInstance
+                    ) {
+                        downrangeContainer._chartInstance.options.scales.x.min =
+                            globalMin;
+                        downrangeContainer._chartInstance.options.scales.x.max =
+                            globalMax;
+                        downrangeContainer._chartInstance.update();
                     }
                 }
             }

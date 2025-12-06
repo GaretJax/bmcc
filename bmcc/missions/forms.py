@@ -1,9 +1,11 @@
 import logging
 
 from django import forms
-from django.contrib.gis.geos import Point
+from django.contrib.postgres.forms import DateTimeRangeField, RangeWidget
 
 import requests
+
+from bmcc.fields import Coordinate
 
 from .models import LaunchSite, Mission
 
@@ -21,7 +23,7 @@ class LaunchSiteForm(forms.ModelForm):
 
     def save(self, commit=True):
         obj = super().save(commit=False)
-        obj.location = Point(
+        obj.location = Coordinate(
             self.cleaned_data["longitude"], self.cleaned_data["latitude"]
         )
         if obj.altitude in (None, ""):
@@ -65,13 +67,29 @@ class LaunchSiteForm(forms.ModelForm):
 
 
 class MissionParametersForm(forms.ModelForm):
+    mission_window = DateTimeRangeField(
+        required=False,
+        widget=RangeWidget(
+            forms.DateTimeInput(
+                attrs={"type": "datetime-local"},
+                format="%Y-%m-%dT%H:%M",
+            )
+        ),
+    )
+
     class Meta:
         model = Mission
-        fields = ["ascent_rate", "burst_altitude", "descent_rate"]
+        fields = [
+            "ascent_rate",
+            "burst_altitude",
+            "descent_rate",
+            "mission_window",
+        ]
         labels = {
             "ascent_rate": "Ascent speed (m/s)",
             "burst_altitude": "Target burst altitude (m)",
             "descent_rate": "Descent speed (m/s)",
+            "mission_window": "Mission window",
         }
         widgets = {
             "ascent_rate": forms.NumberInput(attrs={"step": "0.1"}),

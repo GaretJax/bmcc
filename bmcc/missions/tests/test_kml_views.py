@@ -1,11 +1,11 @@
 import xml.etree.ElementTree as ET
 
-from django.contrib.gis.geos import Point
 from django.urls import reverse
 from django.utils import timezone
 
 import pytest
 
+from bmcc.fields import Coordinate
 from bmcc.missions.models import LaunchSite, Mission
 from bmcc.tracking import constants
 from bmcc.tracking.models import Asset, Beacon, Ping
@@ -59,7 +59,7 @@ def test_kml_update_builds_folder_hierarchy_with_tracks_and_positions(client):
     LaunchSite.objects.create(
         mission=mission,
         name="Field Alpha",
-        location=Point(30.0, 40.0),
+        location=Coordinate(30.0, 40.0),
         altitude=None,
     )
 
@@ -78,7 +78,7 @@ def test_kml_update_builds_folder_hierarchy_with_tracks_and_positions(client):
         asset=balloon,
         beacon=balloon_beacon,
         reported_at=now,
-        position=Point(1.0, 2.0),
+        position=Coordinate(1.0, 2.0),
         altitude=100,
     )
 
@@ -98,7 +98,7 @@ def test_kml_update_builds_folder_hierarchy_with_tracks_and_positions(client):
         asset=vehicle,
         beacon=vehicle_beacon,
         reported_at=now,
-        position=Point(10.0, 20.0),
+        position=Coordinate(10.0, 20.0),
         altitude=None,
     )
 
