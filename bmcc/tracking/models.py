@@ -27,6 +27,8 @@ class Asset(models.Model):
         related_name="assets",
     )
     launched_at = models.DateTimeField(null=True, blank=True)
+    landed_at = models.DateTimeField(null=True, blank=True)
+    landing_location = CoordinateField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

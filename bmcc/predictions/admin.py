@@ -2,6 +2,8 @@ from django.contrib import admin
 
 from adminutils import ModelAdmin
 
+from bmcc.fields import CoordinateField, CoordinateFormField
+
 from .models import Prediction
 
 
@@ -15,3 +17,6 @@ class PredictionAdmin(ModelAdmin):
     ]
     search_fields = ["id"]
     list_filter = ["launch_at", "bursting_at", "landing_at", "created_at"]
+    formfield_overrides = {
+        CoordinateField: {"form_class": CoordinateFormField}
+    }

@@ -1,7 +1,9 @@
 import uuid
 
+from django import forms
 from django.contrib.gis.db import models as geo_models
-from django.contrib.gis.geos import Point
+from django.contrib.gis.db.models.fields import SpatialProxy
+from django.contrib.gis.geos import GEOSGeometry, Point
 from django.db import models
 from django.db.models import UUIDField
 from django.db.models.base import NOT_PROVIDED
@@ -195,6 +197,54 @@ class Coordinate(Point):
     abs_lon = abs_longitude
 
 
+class CoordinateWidget(forms.MultiWidget):
+    def __init__(self, attrs=None):
+        widgets = (
+            forms.NumberInput(attrs={"step": "0.00001"}),
+            forms.NumberInput(attrs={"step": "0.00001"}),
+        )
+        super().__init__(widgets, attrs)
+
+    def decompress(self, value):
+        if value:
+            return [value.y, value.x]
+        return [None, None]
+
+
+class CoordinateFormField(forms.MultiValueField):
+    widget = CoordinateWidget
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("geom_type", None)
+        kwargs.pop("srid", None)
+        kwargs.pop("dim", None)
+        kwargs.pop("geography", None)
+        fields = (
+            forms.FloatField(required=False),
+            forms.FloatField(required=False),
+        )
+        super().__init__(fields, *args, require_all_fields=False, **kwargs)
+
+    def compress(self, data_list):
+        if data_list is None:
+            return None
+        lat, lon = data_list
+        if lat in (None, "") and lon in (None, ""):
+            return None
+        if lat in (None, "") or lon in (None, ""):
+            raise forms.ValidationError(
+                "Both latitude and longitude are required."
+            )
+        return Coordinate(float(lon), float(lat))
+
+
+class CoordinateProxy(SpatialProxy):
+    def __set__(self, obj, value):
+        if isinstance(value, Point) and not isinstance(value, Coordinate):
+            value = Coordinate(value.x, value.y, srid=value.srid)
+        super().__set__(obj, value)
+
+
 class CoordinateField(geo_models.PointField):
     geom_class = Coordinate
 
@@ -202,3 +252,11 @@ class CoordinateField(geo_models.PointField):
         kwargs.setdefault("geography", True)
         kwargs.setdefault("dim", 2)
         super().__init__(*args, **kwargs)
+
+    def contribute_to_class(self, cls, name, **kwargs):
+        super().contribute_to_class(cls, name, **kwargs)
+        setattr(
+            cls,
+            self.attname,
+            CoordinateProxy(self.geom_class, self, load_func=GEOSGeometry),
+        )

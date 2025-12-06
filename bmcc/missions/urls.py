@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from .views_asset_landing import asset_mark_landed
 from .views_asset_launch import asset_mark_launched
 from .views_predictions import run_launch_site_prediction
 
@@ -25,6 +26,11 @@ urlpatterns = [
         "<uuid:mission_id>/assets/<uuid:asset_id>/mark-launched/",
         asset_mark_launched,
         name="asset_mark_launched",
+    ),
+    path(
+        "<uuid:mission_id>/assets/<uuid:asset_id>/mark-landed/",
+        asset_mark_landed,
+        name="asset_mark_landed",
     ),
     path(
         "<uuid:mission_id>/parameters/",

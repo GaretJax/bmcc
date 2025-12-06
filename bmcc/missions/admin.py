@@ -2,6 +2,8 @@ from django.contrib import admin
 
 from adminutils import ModelAdmin
 
+from bmcc.fields import CoordinateField, CoordinateFormField
+
 from . import models
 
 
@@ -21,3 +23,6 @@ class LaunchSiteAdmin(ModelAdmin):
         "mission",
     ]
     search_fields = ["name", "mission__name"]
+    formfield_overrides = {
+        CoordinateField: {"form_class": CoordinateFormField}
+    }

@@ -5,6 +5,8 @@ from adminutils import ModelAdmin, admin_detail_link
 from import_export import resources
 from import_export.admin import ExportMixin
 
+from bmcc.fields import CoordinateField, CoordinateFormField
+
 from . import models
 
 
@@ -20,6 +22,9 @@ class AssetAdmin(ModelAdmin):
         "asset_type",
         "mission",
     ]
+    formfield_overrides = {
+        CoordinateField: {"form_class": CoordinateFormField}
+    }
 
 
 @admin.register(models.Beacon)
@@ -115,3 +120,6 @@ class PingAdmin(ExportMixin, ModelAdmin):
         "beacon",
     ]
     resource_class = PingResource
+    formfield_overrides = {
+        CoordinateField: {"form_class": CoordinateFormField}
+    }

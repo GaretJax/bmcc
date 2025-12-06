@@ -6,6 +6,7 @@
 {{ block.super }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 {% endblock %}
 
@@ -27,6 +28,12 @@
                         from {{ asset.launch_site.name }}
                     {% endif %}
                 {% endif %}
+                {% if asset.landed_at %}
+                    &middot; Landed at {{ asset.landed_at|date:"Y-m-d H:i" }}
+                    {% if asset.landing_location %}
+                        ({{ asset.landing_location.y|floatformat:5 }}, {{ asset.landing_location.x|floatformat:5 }})
+                    {% endif %}
+                {% endif %}
             </p>
         </div>
         <span class="label secondary">{{ asset.mission.name }}</span>
@@ -34,7 +41,7 @@
     {% if asset.notes %}
         <p>{{ asset.notes }}</p>
     {% endif %}
-    {% if asset.asset_type == "balloon" and not asset.launched_at %}
+{% if asset.asset_type == "balloon" and not asset.launched_at %}
         <form method="post"
               action="{% url 'missions:asset_mark_launched' mission_id=mission.pk asset_id=asset.pk %}"
               class="grid-x grid-margin-x">
@@ -62,6 +69,34 @@
             <div class="cell">
                 <button type="submit" class="button success small">
                     Mark as launched
+                </button>
+            </div>
+        </form>
+    {% elif asset.asset_type == "balloon" and asset.launched_at and not asset.landed_at %}
+        <form method="post"
+              action="{% url 'missions:asset_mark_landed' mission_id=mission.pk asset_id=asset.pk %}"
+              class="grid-x grid-margin-x">
+            {% csrf_token %}
+            <div class="cell medium-6">
+                <label>Landing latitude
+                    <input type="number" name="latitude" step="0.00001" required>
+                </label>
+            </div>
+            <div class="cell medium-6">
+                <label>Landing longitude
+                    <input type="number" name="longitude" step="0.00001" required>
+                </label>
+            </div>
+            <div class="cell medium-6">
+                <label>Landed at
+                    <input type="datetime-local"
+                           name="landed_at"
+                           value="{{ refreshed_at|date:'Y-m-d\\TH:i' }}">
+                </label>
+            </div>
+            <div class="cell">
+                <button type="submit" class="button warning small">
+                    Mark as landed
                 </button>
             </div>
         </form>
@@ -179,6 +214,18 @@
         L.marker(
             [{{ asset.launch_site.location.y }}, {{ asset.launch_site.location.x }}],
             { title: "Launch", icon: launchIcon }
+        ).addTo(map);
+        {% endif %}
+        {% if asset.landed_at and asset.landing_location %}
+        var landingIcon = L.divIcon({
+            html: "&#x1F3C1;",
+            className: "emoji-icon",
+            iconSize: [24, 24],
+            iconAnchor: [1, 25],
+        });
+        L.marker(
+            [{{ asset.landing_location.y }}, {{ asset.landing_location.x }}],
+            { title: "Landing", icon: landingIcon }
         ).addTo(map);
         {% endif %}
     }());
