@@ -107,7 +107,11 @@ class MissionAssetListView(ListView):
             **super().get_context_data(**kwargs),
         }
         context["last_ping_timestamp"] = (
-            max(a.last_ping_reported_at for a in context["object_list"])
+            max(
+                a.last_ping_reported_at
+                for a in context["object_list"]
+                if a.last_ping_reported
+            )
             if context["object_list"]
             else None
         )
