@@ -110,7 +110,7 @@ class MissionAssetListView(ListView):
             max(
                 a.last_ping_reported_at
                 for a in context["object_list"]
-                if a.last_ping_reported
+                if a.last_ping_reported_at
             )
             if context["object_list"]
             else None
