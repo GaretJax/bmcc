@@ -7,7 +7,7 @@ from celery import shared_task
 from bmcc.predictions.backends.tawhiri import TawhiriBackend
 from bmcc.predictions.models import Prediction
 
-from .models import LaunchSiteCandidate
+from .models import LaunchSite
 
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ def generate_predictions_for_future_launches(self):
     updated = 0
 
     candidates = (
-        LaunchSiteCandidate.objects.select_related("mission")
+        LaunchSite.objects.select_related("mission")
         .filter(intended_launch_at__gt=now)
         .order_by("mission_id", "intended_launch_at")
     )

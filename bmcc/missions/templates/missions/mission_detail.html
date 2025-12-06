@@ -36,6 +36,32 @@
     </div>
 </div>
 
+<section class="card">
+    <div class="grid-x align-middle align-justify" style="margin-bottom: 0.5rem;">
+        <h3 class="h5">Mission parameters</h3>
+        <div>
+            <a class="button hollow tiny"
+               href="{% url 'missions:mission_parameters' mission_id=mission.pk %}">Edit</a>
+        </div>
+    </div>
+    <table class="unstriped">
+        <tbody>
+            <tr>
+                <th width="200">Ascent speed</th>
+                <td>{% if mission.ascent_rate %}{{ mission.ascent_rate }} m/s{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+                <th>Target burst altitude</th>
+                <td>{% if mission.burst_altitude %}{{ mission.burst_altitude }} m{% else %}—{% endif %}</td>
+            </tr>
+            <tr>
+                <th>Descent speed</th>
+                <td>{% if mission.descent_rate %}{{ mission.descent_rate }} m/s{% else %}—{% endif %}</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
 {% for asset in assets %}
 <section class="card">
     <div class="grid-x align-justify align-middle">

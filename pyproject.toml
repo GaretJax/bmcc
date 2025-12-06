@@ -49,7 +49,7 @@ line-length=79
 ignore = ["S101"]
 
 [tool.pytest]
-addopts = "--reuse-db --cov-config setup.cfg --pdbcls IPython.core.debugger:Pdb --rootdir /app"
+addopts = ["--reuse-db", "--cov-config", "setup.cfg", "--pdbcls", "IPython.core.debugger:Pdb", "--rootdir", "/app"]
 markers = ["integration"]
 cache_dir = "/artifacts/pytest-cache"
 

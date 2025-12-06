@@ -1,0 +1,45 @@
+{% extends "missions/base.html" %}
+
+{% block title %}Edit mission parameters{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="grid-x align-justify align-middle" style="margin-bottom: 0.75rem;">
+        <div class="cell auto">
+            <h2 class="h4">Edit mission parameters</h2>
+            <p class="muted">Mission: {{ mission.name }}</p>
+        </div>
+    </div>
+    <form method="post" class="grid-x grid-margin-x">
+        {% csrf_token %}
+        <div class="cell medium-4">
+            <label>{{ form.ascent_rate.label }}
+                {{ form.ascent_rate }}
+            </label>
+            {% if form.ascent_rate.errors %}
+                <p class="form-error is-visible">{{ form.ascent_rate.errors|join:", " }}</p>
+            {% endif %}
+        </div>
+        <div class="cell medium-4">
+            <label>{{ form.burst_altitude.label }}
+                {{ form.burst_altitude }}
+            </label>
+            {% if form.burst_altitude.errors %}
+                <p class="form-error is-visible">{{ form.burst_altitude.errors|join:", " }}</p>
+            {% endif %}
+        </div>
+        <div class="cell medium-4">
+            <label>{{ form.descent_rate.label }}
+                {{ form.descent_rate }}
+            </label>
+            {% if form.descent_rate.errors %}
+                <p class="form-error is-visible">{{ form.descent_rate.errors|join:", " }}</p>
+            {% endif %}
+        </div>
+        <div class="cell medium-12">
+            <button type="submit" class="button primary">Save</button>
+            <a class="button hollow" href="{% url 'missions:detail' mission_id=mission.pk %}">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

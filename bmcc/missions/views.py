@@ -1,14 +1,22 @@
 from django.db.models import OuterRef, Prefetch, Subquery
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 from django.utils import timezone
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView, FormView, ListView
 
 import simplekml
+
+from bmcc.predictions.models import Prediction
 
 from ..tracking import constants as tracking_constants
 from ..tracking.models import Asset, Beacon, Ping
 from . import models
+from .forms import (
+    LaunchSiteForm,
+    LaunchSiteUpdateForm,
+    MissionParametersForm,
+)
+from .models import LaunchSite
 
 
 ICON_BY_ASSET_TYPE = {
@@ -99,6 +107,275 @@ class MissionAssetListView(ListView):
         if getattr(self.request, "htmx", False):
             return ["tracking/partials/assets_table.html"]
         return [self.template_name]
+
+
+class AssetDetailView(DetailView):
+    model = Asset
+    template_name = "tracking/asset_detail.html"
+    context_object_name = "asset"
+    pk_url_kwarg = "asset_id"
+
+    def get_queryset(self):
+        return (
+            Asset.objects.select_related("mission")
+            .prefetch_related("beacons", "beacons__pings")
+            .filter(mission__pk=self.kwargs["mission_id"])
+        )
+
+    def get_context_data(self, **kwargs):
+        mission = self.object.mission
+        kwargs["mission"] = mission
+        ping_qs = Ping.objects.filter(asset=self.object)
+        if mission.mission_window:
+            if mission.mission_window.lower:
+                ping_qs = ping_qs.filter(
+                    reported_at__gte=mission.mission_window.lower
+                )
+            if mission.mission_window.upper:
+                ping_qs = ping_qs.filter(
+                    reported_at__lte=mission.mission_window.upper
+                )
+        kwargs["pings"] = ping_qs.order_by(
+            "-reported_at", "-created_at"
+        ).select_related("beacon")[:10]
+        altitude_series = {}
+        speed_series = {}
+        kwargs["chart_bounds"] = {
+            "start": mission.mission_window.lower
+            if mission.mission_window
+            else None,
+            "end": mission.mission_window.upper
+            if mission.mission_window
+            else None,
+        }
+        beacon_data = ping_qs.order_by("reported_at").values_list(
+            "beacon__identifier", "reported_at", "altitude", "position"
+        )
+        horizontal_series = {}
+        for beacon_id, reported_at, altitude, position in beacon_data:
+            altitude_series.setdefault(beacon_id, []).append(
+                (reported_at, altitude)
+            )
+            history = speed_series.setdefault(beacon_id, [])
+            history.append((reported_at, altitude, position))
+            horizontal_series.setdefault(beacon_id, []).append(
+                (reported_at, position)
+            )
+
+        speed_chart_data = {}
+        for beacon_id, points in speed_series.items():
+            derived = []
+            for idx in range(1, len(points)):
+                prev_t, prev_alt, _ = points[idx - 1]
+                curr_t, curr_alt, _ = points[idx]
+                if prev_alt is None or curr_alt is None:
+                    continue
+                delta_alt = curr_alt - prev_alt
+                delta_t = (curr_t - prev_t).total_seconds()
+                if delta_t <= 0:
+                    continue
+                derived.append((curr_t, delta_alt / delta_t))
+            speed_chart_data[beacon_id] = derived
+
+        def haversine_meters(p1, p2):
+            import math
+
+            lat1, lon1 = math.radians(p1.y), math.radians(p1.x)
+            lat2, lon2 = math.radians(p2.y), math.radians(p2.x)
+            dlat = lat2 - lat1
+            dlon = lon2 - lon1
+            a = (
+                math.sin(dlat / 2) ** 2
+                + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+            )
+            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+            return 6371000 * c
+
+        horizontal_chart_data = {}
+        for beacon_id, points in horizontal_series.items():
+            derived = []
+            for idx in range(1, len(points)):
+                prev_t, prev_pos = points[idx - 1]
+                curr_t, curr_pos = points[idx]
+                delta_t = (curr_t - prev_t).total_seconds()
+                if delta_t <= 0 or not prev_pos or not curr_pos:
+                    continue
+                distance = haversine_meters(prev_pos, curr_pos)
+                derived.append((curr_t, distance / delta_t))
+            horizontal_chart_data[beacon_id] = derived
+
+        kwargs["altitude_series"] = altitude_series
+        kwargs["speed_series"] = speed_chart_data
+        kwargs["horizontal_speed_series"] = horizontal_chart_data
+        kwargs["refreshed_at"] = timezone.now()
+        return super().get_context_data(**kwargs)
+
+    def get_template_names(self):
+        if getattr(self.request, "htmx", False):
+            section = self.request.headers.get(
+                "HX-Section"
+            ) or self.request.GET.get("hx_section")
+            if section == "altitude":
+                return ["tracking/partials/asset_altitude_chart.html"]
+            if section == "speed":
+                return ["tracking/partials/asset_speed_chart.html"]
+            if section == "horizontal_speed":
+                return ["tracking/partials/asset_horizontal_speed_chart.html"]
+            if section == "pings":
+                return ["tracking/partials/asset_pings_table.html"]
+            return ["tracking/partials/asset_pings_table.html"]
+        return [self.template_name]
+
+
+class LaunchSiteListView(ListView):
+    model = LaunchSite
+    template_name = "missions/launch_sites.html"
+    context_object_name = "launch_sites"
+
+    def get_queryset(self):
+        self.mission = models.Mission.objects.get(pk=self.kwargs["mission_id"])
+        return LaunchSite.objects.filter(mission=self.mission).order_by("name")
+
+    def get_context_data(self, **kwargs):
+        kwargs["mission"] = self.mission
+        return super().get_context_data(**kwargs)
+
+
+class LaunchSiteDetailView(DetailView):
+    model = LaunchSite
+    template_name = "missions/launch_site_detail.html"
+    context_object_name = "launch_site"
+    pk_url_kwarg = "launch_site_id"
+
+    def get_queryset(self):
+        return (
+            LaunchSite.objects.filter(mission_id=self.kwargs["mission_id"])
+            .select_related("mission")
+            .prefetch_related(
+                Prefetch(
+                    "prediction_history",
+                    queryset=Prediction.objects.order_by("-created_at"),
+                )
+            )
+        )
+
+    def get_context_data(self, **kwargs):
+        kwargs["mission"] = self.object.mission
+        preds = self.object.prediction_history.all()
+        kwargs["last_prediction"] = preds[0] if preds else None
+        return super().get_context_data(**kwargs)
+
+
+class LaunchSiteCreateView(DetailView, FormView):
+    model = models.Mission
+    form_class = LaunchSiteForm
+    template_name = "missions/launch_site_form.html"
+    pk_url_kwarg = "mission_id"
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().post(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        kwargs["mission"] = self.object
+        return super().get_context_data(**kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["initial"] = kwargs.get("initial") or {}
+        return kwargs
+
+    def form_valid(self, form):
+        launch_site = form.save(commit=False)
+        launch_site.mission = self.object
+        launch_site.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse(
+            "missions:launch_site_list",
+            kwargs={"mission_id": self.object.pk},
+        )
+
+
+class LaunchSiteUpdateView(DetailView, FormView):
+    model = LaunchSite
+    form_class = LaunchSiteUpdateForm
+    template_name = "missions/launch_site_update_form.html"
+    pk_url_kwarg = "launch_site_id"
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().post(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return LaunchSite.objects.filter(
+            mission_id=self.kwargs["mission_id"]
+        ).select_related("mission")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["instance"] = self.object
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        kwargs["mission"] = self.object.mission
+        kwargs["launch_site"] = self.object
+        return super().get_context_data(**kwargs)
+
+    def form_valid(self, form):
+        form.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse(
+            "missions:launch_site_detail",
+            kwargs={
+                "mission_id": self.kwargs["mission_id"],
+                "launch_site_id": self.object.pk,
+            },
+        )
+
+
+class MissionParametersUpdateView(DetailView, FormView):
+    model = models.Mission
+    form_class = MissionParametersForm
+    template_name = "missions/mission_parameters_form.html"
+    pk_url_kwarg = "mission_id"
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().post(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["instance"] = self.object
+        return kwargs
+
+    def form_valid(self, form):
+        form.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_context_data(self, **kwargs):
+        kwargs["mission"] = self.object
+        return super().get_context_data(**kwargs)
+
+    def get_success_url(self):
+        return reverse(
+            "missions:detail", kwargs={"mission_id": self.object.pk}
+        )
 
 
 def kml_entrypoint(request, mission_id):

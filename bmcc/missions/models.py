@@ -1,4 +1,5 @@
 from django.contrib.gis.db import models as gis_models
+from django.contrib.postgres.fields import DateTimeRangeField
 from django.db import models
 from django.urls import reverse
 
@@ -12,6 +13,7 @@ class Mission(models.Model):
     ascent_rate = models.FloatField(null=True, blank=True)
     burst_altitude = models.FloatField(null=True, blank=True)
     descent_rate = models.FloatField(null=True, blank=True)
+    mission_window = DateTimeRangeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -26,7 +28,7 @@ class Mission(models.Model):
         return reverse("missions:detail", kwargs={"mission_id": self.pk})
 
 
-class LaunchSiteCandidate(models.Model):
+class LaunchSite(models.Model):
     id = UUIDAutoField()
     mission = models.ForeignKey(
         Mission,

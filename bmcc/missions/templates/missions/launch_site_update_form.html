@@ -1,0 +1,29 @@
+{% extends "missions/base.html" %}
+
+{% block title %}Edit launch time{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="grid-x align-justify align-middle" style="margin-bottom: 0.75rem;">
+        <div class="cell auto">
+            <h2 class="h4">Edit launch time</h2>
+            <p class="muted">Launch site: {{ launch_site.name }} | Mission: {{ mission.name }}</p>
+        </div>
+    </div>
+    <form method="post" class="grid-x grid-margin-x">
+        {% csrf_token %}
+        <div class="cell medium-6">
+            <label>Intended launch at
+                {{ form.intended_launch_at }}
+            </label>
+            {% if form.intended_launch_at.errors %}
+                <p class="form-error is-visible">{{ form.intended_launch_at.errors|join:", " }}</p>
+            {% endif %}
+        </div>
+        <div class="cell medium-12">
+            <button type="submit" class="button primary">Save</button>
+            <a class="button hollow" href="{% url 'missions:launch_site_detail' mission_id=mission.pk launch_site_id=launch_site.pk %}">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

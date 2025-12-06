@@ -1,0 +1,113 @@
+{% extends "missions/base.html" %}
+
+{% block title %}Asset: {{ asset.name }}{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="grid-x align-justify align-middle"
+         style="margin-bottom: 0.75rem;">
+        <div class="cell auto">
+            <h2 class="h4">{{ asset.name }}</h2>
+            <p class="muted">
+                Mission: {{ asset.mission.name }} &middot;
+                Type: {{ asset.get_asset_type_display }}
+                {% if asset.callsign %}
+                    &middot; Callsign: {{ asset.callsign }}
+                {% endif %}
+                {% if asset.launched_at %}
+                    &middot; Launched at {{ asset.launched_at|date:"Y-m-d H:i" }}
+                    {% if asset.launch_site %}
+                        from {{ asset.launch_site.name }}
+                    {% endif %}
+                {% endif %}
+            </p>
+        </div>
+        <span class="label secondary">{{ asset.mission.name }}</span>
+    </div>
+    {% if asset.notes %}
+        <p>{{ asset.notes }}</p>
+    {% endif %}
+    {% if asset.asset_type == "balloon" and not asset.launched_at %}
+        <form method="post"
+              action="{% url 'missions:asset_mark_launched' mission_id=mission.pk asset_id=asset.pk %}"
+              class="grid-x grid-margin-x">
+            {% csrf_token %}
+            <div class="cell medium-6">
+                <label>Launch site
+                    <select name="launch_site">
+                        <option value="">Select launch site</option>
+                        {% for site in mission.launch_site_candidates.all %}
+                            <option value="{{ site.pk }}"
+                                {% if asset.launch_site_id == site.pk %}selected{% endif %}>
+                                {{ site.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+            <div class="cell medium-6">
+                <label>Launched at
+                    <input type="datetime-local"
+                           name="launched_at"
+                           value="{{ refreshed_at|date:'Y-m-d\\TH:i' }}">
+                </label>
+            </div>
+            <div class="cell">
+                <button type="submit" class="button success small">
+                    Mark as launched
+                </button>
+            </div>
+        </form>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="grid-x align-justify align-middle"
+         style="margin-bottom: 0.75rem;">
+        <div class="cell auto">
+            <h3 class="h5">Recent pings</h3>
+            <p class="muted">Latest activity across all beacons</p>
+        </div>
+    </div>
+    {% include "tracking/partials/asset_pings_table.html" %}
+</div>
+
+<div class="card">
+    <div class="grid-x align-justify align-middle"
+         style="margin-bottom: 0.75rem;">
+        <div class="cell auto">
+            <h3 class="h5">Altitude history</h3>
+            <p class="muted">Full altitude history (pings with altitude)</p>
+        </div>
+    </div>
+    {% include "tracking/partials/asset_altitude_chart.html" %}
+</div>
+
+<div class="card">
+    <div class="grid-x align-justify align-middle"
+         style="margin-bottom: 0.75rem;">
+        <div class="cell auto">
+            <h3 class="h5">Vertical speed</h3>
+            <p class="muted">Derived speed by beacon (m/s)</p>
+        </div>
+    </div>
+    {% include "tracking/partials/asset_speed_chart.html" %}
+</div>
+
+<div class="card">
+    <div class="grid-x align-justify align-middle"
+         style="margin-bottom: 0.75rem;">
+        <div class="cell auto">
+            <h3 class="h5">Horizontal speed</h3>
+            <p class="muted">Derived ground speed by beacon (m/s)</p>
+        </div>
+    </div>
+    {% include "tracking/partials/asset_horizontal_speed_chart.html" %}
+</div>
+{% endblock %}

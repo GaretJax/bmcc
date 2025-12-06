@@ -1,0 +1,41 @@
+{% extends "missions/base.html" %}
+
+{% block title %}New launch site{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="grid-x align-justify align-middle"
+         style="margin-bottom: 0.75rem;">
+        <div class="cell auto">
+            <h2 class="h4">Add launch site</h2>
+            <p class="muted">Mission: {{ mission.name }}</p>
+        </div>
+    </div>
+    <form method="post" class="grid-x grid-margin-x">
+        {% csrf_token %}
+        <div class="cell medium-6">
+            <label>Name
+                {{ form.name }}
+            </label>
+        </div>
+        <div class="cell medium-3">
+            <label>Latitude
+                {{ form.latitude }}
+            </label>
+        </div>
+        <div class="cell medium-3">
+            <label>Longitude
+                {{ form.longitude }}
+            </label>
+        </div>
+        <div class="cell medium-4">
+            <label>Intended launch at
+                {{ form.intended_launch_at }}
+            </label>
+        </div>
+        <div class="cell medium-12">
+            <button type="submit" class="button primary">Save launch site</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

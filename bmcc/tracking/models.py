@@ -1,7 +1,7 @@
 from django.contrib.gis.db import models
 
 from bmcc.fields import ConfigurableInstanceField, UUIDAutoField
-from bmcc.missions.models import Mission
+from bmcc.missions.models import LaunchSite, Mission
 
 from . import constants, managers
 
@@ -15,6 +15,14 @@ class Asset(models.Model):
     callsign = models.CharField(max_length=64, blank=True)
     asset_type = models.CharField(max_length=64, choices=constants.AssetType)
     notes = models.TextField(blank=True)
+    launch_site = models.ForeignKey(
+        LaunchSite,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="assets",
+    )
+    launched_at = models.DateTimeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -24,6 +32,17 @@ class Asset(models.Model):
 
     def __str__(self):
         return self.callsign or self.name
+
+    def clean(self):
+        super().clean()
+        if self.launch_site and self.launch_site.mission_id != self.mission_id:
+            from django.core.exceptions import ValidationError
+
+            raise ValidationError(
+                {
+                    "launch_site": "Launch site must belong to the asset mission."
+                }
+            )
 
 
 class Beacon(models.Model):

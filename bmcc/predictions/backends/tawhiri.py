@@ -63,9 +63,12 @@ class TawhiriBackend:
         Additional parameters (e.g., profile, ascent_rate) can be provided
         via prediction.additional_parameters.
         """
+        lon = prediction.launch_location.x
+        if lon < 0:
+            lon = 360 + lon
         params = {
             "launch_latitude": prediction.launch_location.y,
-            "launch_longitude": prediction.launch_location.x,
+            "launch_longitude": lon,
             "launch_altitude": prediction.launch_altitude or 0,
             "launch_datetime": prediction.launch_at.isoformat(),
         }
@@ -81,14 +84,14 @@ class TawhiriBackend:
 
         prediction.bursting_at = parse_datetime(burst["datetime"])
         prediction.burst_location = Point(
-            burst["latitude"],
             burst["longitude"],
+            burst["latitude"],
         )
         prediction.burst_altitude = burst["altitude"]
 
         prediction.landing_at = parse_datetime(land["datetime"])
         prediction.land_location = Point(
-            land["latitude"],
             land["longitude"],
+            land["latitude"],
         )
         prediction.land_altitude = land["altitude"]

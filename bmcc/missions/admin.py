@@ -10,8 +10,8 @@ class MissionAdmin(ModelAdmin):
     pass
 
 
-@admin.register(models.LaunchSiteCandidate)
-class LaunchSiteCandidateAdmin(ModelAdmin):
+@admin.register(models.LaunchSite)
+class LaunchSiteAdmin(ModelAdmin):
     list_display = [
         "name",
         "mission",

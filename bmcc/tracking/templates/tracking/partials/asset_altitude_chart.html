@@ -1,0 +1,70 @@
+<div id="asset-altitude-chart-wrapper"
+     hx-get="{{ request.path }}"
+     hx-trigger="every 5s"
+     hx-swap="outerHTML"
+     hx-headers='{"HX-Section": "altitude"}'
+     hx-vals='{"hx_section": "altitude"}'>
+    <div class="grid-x align-justify align-middle"
+         style="margin-bottom: 0.75rem;">
+        <div class="cell auto">
+            <p class="muted">
+                Updated at
+                <strong data-role="updated-at">
+                    {{ refreshed_at|date:"Y-m-d H:i:s" }}
+                </strong>
+                —
+                Next refresh in
+                <strong data-role="refresh-countdown">5s</strong>
+            </p>
+        </div>
+        <div class="cell shrink">
+            <span class="label secondary" data-role="refresh-status"></span>
+        </div>
+    </div>
+    <canvas id="altitude-chart" height="120"></canvas>
+    {{ altitude_series|json_script:"altitude-series-data" }}
+    {{ chart_bounds|json_script:"chart-bounds-data" }}
+    <script>
+        (function () {
+            var container = document.currentScript.closest(
+                "#asset-altitude-chart-wrapper"
+            );
+            if (!container) { return; }
+
+            var statusEl = container.querySelector(
+                "[data-role='refresh-status']"
+            );
+            var countdownEl = container.querySelector(
+                "[data-role='refresh-countdown']"
+            );
+            var intervalSeconds = 5;
+
+            function startCountdown() {
+                var remaining = intervalSeconds;
+                countdownEl.textContent = remaining + "s";
+                var timer = setInterval(function () {
+                    if (window.refreshPaused) {
+                        countdownEl.textContent = "paused";
+                        return;
+                    }
+                    remaining -= 1;
+                    if (remaining <= 0) {
+                        countdownEl.textContent = "0s";
+                        clearInterval(timer);
+                    } else {
+                        countdownEl.textContent = remaining + "s";
+                    }
+                }, 1000);
+            }
+            startCountdown();
+
+            container.addEventListener("htmx:beforeRequest", function () {
+                if (statusEl) { statusEl.textContent = "Updating..."; }
+            });
+            container.addEventListener("htmx:afterSwap", function () {
+                if (statusEl) { statusEl.textContent = ""; }
+            });
+
+        }());
+    </script>
+</div>

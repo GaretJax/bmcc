@@ -1,9 +1,11 @@
-<div id="asset-data"
+<div id="asset-pings"
      hx-get="{{ request.path }}"
      hx-trigger="every 5s"
-     hx-swap="outerHTML">
+     hx-swap="outerHTML"
+     hx-vals='{"hx_section": "pings"}'>
     <div class="grid-x align-justify align-middle"
-         style="margin-bottom: 0.75rem;">
+         style="margin-bottom: 0.75rem;"
+         hx-boost="false">
         <div class="cell auto">
             <p class="muted">
                 Updated at
@@ -22,7 +24,6 @@
     <table class="stack">
         <thead>
             <tr>
-                <th>Asset</th>
                 <th>Beacon</th>
                 <th>Latitude</th>
                 <th>Longitude</th>
@@ -31,46 +32,30 @@
             </tr>
         </thead>
         <tbody>
-            {% for asset in assets %}
+            {% for ping in pings %}
                 <tr>
+                    <td>{{ ping.beacon.identifier }}</td>
+                    <td>{{ ping.latitude|floatformat:5 }}</td>
+                    <td>{{ ping.longitude|floatformat:5 }}</td>
                     <td>
-{% url 'missions:asset_detail' mission.pk asset.pk as asset_detail_url %}
-                        <a href="{{ asset_detail_url }}">{{ asset.name }}</a>
+                        {% if ping.altitude %}
+                            {{ ping.altitude }} m
+                        {% else %}
+                            —
+                        {% endif %}
                     </td>
-                    <td>{{ asset.last_ping_beacon|default:"—" }}</td>
-                    <td>
-                        {% if asset.last_ping_position %}
-                            {{ asset.last_ping_position.y|floatformat:5 }}
-                        {% else %}—{% endif %}
-                    </td>
-                    <td>
-                        {% if asset.last_ping_position %}
-                            {{ asset.last_ping_position.x|floatformat:5 }}
-                        {% else %}—{% endif %}
-                    </td>
-                    <td>
-                        {% if asset.last_ping_altitude %}
-                            {{ asset.last_ping_altitude }} m
-                        {% else %}—{% endif %}
-                    </td>
-                    <td>
-                        {% if asset.last_ping_reported_at %}
-                            {{ asset.last_ping_reported_at|date:"Y-m-d H:i" }}
-                        {% else %}No pings{% endif %}
-                    </td>
+                    <td>{{ ping.reported_at|date:"Y-m-d H:i" }}</td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center muted">
-                        No assets available.
-                    </td>
+                    <td colspan="5" class="text-center muted">No pings.</td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
     <script>
         (function () {
-            var container = document.currentScript.closest("#asset-data");
+            var container = document.currentScript.closest("#asset-pings");
             if (!container) { return; }
             var statusEl = container.querySelector(
                 "[data-role='refresh-status']"
@@ -84,6 +69,10 @@
                 var remaining = intervalSeconds;
                 countdownEl.textContent = remaining + "s";
                 var timer = setInterval(function () {
+                    if (window.refreshPaused) {
+                        countdownEl.textContent = "paused";
+                        return;
+                    }
                     remaining -= 1;
                     if (remaining <= 0) {
                         countdownEl.textContent = "0s";
@@ -102,6 +91,7 @@
             container.addEventListener("htmx:afterSwap", function () {
                 if (statusEl) { statusEl.textContent = ""; }
             });
+
         }());
     </script>
 </div>
