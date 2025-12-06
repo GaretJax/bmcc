@@ -21,6 +21,7 @@ dependencies = [
     "django-object-actions>=5.0.0",
     "django-pgtrigger>=4.15.4",
     "django-storage-url>=0.12.1",
+    "lxml>=6.0.2",
     "psycopg2-binary>=2.9.11",
     "requests>=2.32.5",
     "sentry-sdk>=2.45.0",

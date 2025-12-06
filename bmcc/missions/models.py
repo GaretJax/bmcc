@@ -23,6 +23,9 @@ class Mission(models.Model):
     def __str__(self):
         return self.name
 
+    def __kml__(self, parent):
+        pass
+
     def get_absolute_url(self):
         return reverse("missions:detail", kwargs={"mission_id": self.pk})
 
@@ -62,3 +65,25 @@ class LaunchSite(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.mission})"
+
+    def __kml__(self):
+        from bmcc.utils.kml import E as kml
+
+        folder = kml.Folder(
+            kml.name(self.name),
+            kml.Placemark(
+                kml.name("Launch location"),
+                kml.Point(
+                    kml.altitudeMode("absolute"),
+                    kml.coordinates(self.location.kml(altitude=self.altitude)),
+                ),
+            ),
+        )
+        predictions = kml.Folder(kml.name("Predictions"))
+        folder.append(predictions)
+        for prediction in self.prediction_history.filter(
+            prediction__isnull=False
+        ):
+            predictions.append(prediction.__kml__())
+
+        return folder

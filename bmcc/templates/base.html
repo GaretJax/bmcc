@@ -85,6 +85,12 @@
                     type="button">
                 Pause refresh
             </button>
+            {% if mission %}
+            <a class="button small hollow"
+               href="{% url 'missions:kml_entrypoint' mission_id=mission.pk %}">
+                Google Earth KML
+            </a>
+            {% endif %}
             {% block topbar_right %}{% endblock %}
         </div>
     </div>

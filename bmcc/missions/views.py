@@ -1,3 +1,4 @@
+import xml.etree.ElementTree as ET
 from datetime import datetime
 
 from django.db.models import OuterRef, Prefetch, Subquery
@@ -5,8 +6,6 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import DetailView, FormView, ListView
-
-import simplekml
 
 from bmcc.predictions.models import Prediction
 
@@ -436,17 +435,23 @@ class MissionParametersUpdateView(DetailView, FormView):
 def kml_entrypoint(request, mission_id):
     mission = models.Mission.objects.get(pk=mission_id)
 
-    kml = simplekml.Kml()
-    netlink = kml.newnetworklink(
-        name=mission.name,
-    )
-    netlink.link.href = request.build_absolute_uri(
+    ns = {"kml": "http://www.opengis.net/kml/2.2"}
+    ET.register_namespace("", ns["kml"])
+    root = ET.Element("{http://www.opengis.net/kml/2.2}kml")
+    document = ET.SubElement(root, "Document")
+    netlink = ET.SubElement(document, "NetworkLink")
+    ET.SubElement(netlink, "name").text = mission.name
+    link = ET.SubElement(netlink, "Link")
+    ET.SubElement(link, "href").text = request.build_absolute_uri(
         reverse("missions:updating_kml", kwargs={"mission_id": mission.pk})
     )
-    netlink.link.refreshmode = "onInterval"
-    netlink.link.refreshinterval = 10
+    ET.SubElement(link, "refreshMode").text = "onInterval"
+    ET.SubElement(link, "refreshInterval").text = "10"
 
-    response = HttpResponse(kml.kml())
+    response = HttpResponse(
+        ET.tostring(root, encoding="utf-8", xml_declaration=True),
+        content_type="application/vnd.google-earth.kml+xml",
+    )
     filename = f"{mission.pk}.kml"
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
@@ -457,113 +462,129 @@ def kml_update(request, mission_id):
         "launch_site_candidates"
     ).get(pk=mission_id)
 
-    kml = simplekml.Kml()
+    from bmcc.utils.kml import KML
 
-    launch_sites_folder = kml.newfolder(name="Launch sites")
+    kml = KML()
+    doc = kml.document(kml.root, mission.name)
+
+    launch_sites_folder = kml.folder(doc, "Launch Sites")
+    for launch_site in mission.launch_site_candidates.all():
+        launch_sites_folder.append(launch_site.__kml__())
 
     assets = (
         Asset.objects.filter(mission=mission)
         .select_related("mission")
-        .prefetch_related(
-            Prefetch(
-                "beacons",
-                queryset=Beacon.objects.active().prefetch_related(
-                    Prefetch(
-                        "pings",
-                        queryset=Ping.objects.filter(mission=mission).order_by(
-                            "reported_at"
-                        ),
-                    )
-                ),
-            )
-        )
+        # .prefetch_related(
+        #    Prefetch(
+        #        "beacons",
+        #        queryset=Beacon.objects.active().prefetch_related(
+        #            Prefetch(
+        #                "pings",
+        #                queryset=Ping.objects.filter(mission=mission).order_by(
+        #                    "reported_at"
+        #                ),
+        #            )
+        #        ),
+        #    )
+        # )
         .order_by("asset_type", "name")
     )
 
-    type_folders = {}
+    assets_folder = kml.folder(doc, "Assets")
+    for asset in assets.iterator(chunk_size=1000):
+        assets_folder.append(asset.__kml__())
 
-    # Normalize coordinates to 2D or 3D based on altitude availability
-    def build_coords(longitude, latitude, altitude):
-        if altitude is not None:
-            return (longitude, latitude, altitude)
-        return (longitude, latitude)
-
-    for asset in assets:
-        type_folder = type_folders.get(asset.asset_type)
-        if type_folder is None:
-            root_folder = kml.newfolder(name=asset.get_asset_type_display())
-            type_folder = {
-                "root": root_folder,
-                "tracks": root_folder.newfolder(name="Tracks"),
-                "positions": root_folder.newfolder(name="Current Positions"),
-            }
-            type_folders[asset.asset_type] = type_folder
-
-        tracks_folder = type_folder["tracks"].newfolder(name=str(asset))
-        positions_folder = type_folder["positions"].newfolder(name=str(asset))
-
-        for beacon in asset.beacons.all():
-            pings = list(beacon.pings.all())
-            if not pings:
-                continue
-
-            coords = [
-                build_coords(ping.longitude, ping.latitude, ping.altitude)
-                for ping in pings
-            ]
-
-            kwargs = {}
-            if any(c[2] for c in coords):
-                kwargs["altitudemode"] = "absolute"
-                kwargs["gxaltitudemode"] = "absolute"
-            else:
-                kwargs["altitudemode"] = "clampToGround"
-                kwargs["gxaltitudemode"] = "clampToGround"
-
-            track = tracks_folder.newlinestring(
-                name=beacon.identifier,
-                coords=coords,
-                visibility=(
-                    asset.asset_type == tracking_constants.AssetType.BALLOON
-                ),
-                **kwargs,
-            )
-            if asset.asset_type == tracking_constants.AssetType.BALLOON:
-                track.extrude = 1
-                track.tessellate = 1
-                track.style.linestyle.color = "7f800080"
-                track.style.linestyle.width = 4
-                track.style.polystyle.color = "7f800080"
-            track.style.iconstyle.icon.href = ICON_BY_ASSET_TYPE.get(
-                asset.asset_type,
-                "http://maps.google.com/mapfiles/kml/paddle/wht-circle.png",
-            )
-
-            point = positions_folder.newpoint(
-                name=beacon.identifier,
-                altitudemode="absolute",
-                gxaltitudemode="absolute",
-                coords=[coords[-1]],
-            )
-            point.style.iconstyle.icon.href = ICON_BY_ASSET_TYPE.get(
-                asset.asset_type,
-                "http://maps.google.com/mapfiles/kml/paddle/wht-circle.png",
-            )
-
-    for launch_site in mission.launch_site_candidates.all():
-        site_folder = launch_sites_folder.newfolder(name=launch_site.name)
-        coords = [
-            build_coords(
-                launch_site.location.x,
-                launch_site.location.y,
-                launch_site.altitude,
-            )
-        ]
-        point = site_folder.newpoint(
-            name=launch_site.name, coords=coords, gxaltitudemode="absolute"
-        )
-
-    response = HttpResponse(kml.kml())
+    response = HttpResponse(
+        str(kml),
+        content_type="application/vnd.google-earth.kml+xml",
+    )
     filename = f"{mission.pk}-update.kml"
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
+
+    # type_folders = {}
+
+    # def build_coords(longitude, latitude, altitude):
+    #     return f"{longitude},{latitude},{altitude or 0}"
+
+    # def make_folder(parent, name):
+    #     folder = ET.SubElement(parent, "Folder")
+    #     ET.SubElement(folder, "name").text = name
+    #     return folder
+
+    # def make_linestring(parent, name, coords_text, visibility, use_altitude):
+    #     pm = ET.SubElement(parent, "Placemark")
+    #     ET.SubElement(pm, "name").text = name
+    #     ET.SubElement(pm, "visibility").text = "1" if visibility else "0"
+    #     linestring = ET.SubElement(pm, "LineString")
+    #     ET.SubElement(linestring, "extrude").text = (
+    #         "1" if use_altitude else "0"
+    #     )
+    #     ET.SubElement(linestring, "tessellate").text = "1"
+    #     ET.SubElement(linestring, "altitudeMode").text = (
+    #         "absolute" if use_altitude else "clampToGround"
+    #     )
+    #     ET.SubElement(linestring, "coordinates").text = " ".join(coords_text)
+    #     style = ET.SubElement(pm, "Style")
+    #     ls = ET.SubElement(style, "LineStyle")
+    #     ET.SubElement(ls, "color").text = "7f800080"
+    #     ET.SubElement(ls, "width").text = "4"
+    #     iconstyle = ET.SubElement(style, "IconStyle")
+    #     icon = ET.SubElement(iconstyle, "Icon")
+    #     ET.SubElement(icon, "href").text = ICON_BY_ASSET_TYPE.get(
+    #         asset.asset_type,
+    #         "http://maps.google.com/mapfiles/kml/paddle/wht-circle.png",
+    #     )
+    #     return pm
+
+    # def make_point(parent, name, coord_text):
+    #     pm = ET.SubElement(parent, "Placemark")
+    #     ET.SubElement(pm, "name").text = name
+    #     point = ET.SubElement(pm, "Point")
+    #     ET.SubElement(point, "altitudeMode").text = "absolute"
+    #     ET.SubElement(point, "coordinates").text = coord_text
+    #     style = ET.SubElement(pm, "Style")
+    #     iconstyle = ET.SubElement(style, "IconStyle")
+    #     icon = ET.SubElement(iconstyle, "Icon")
+    #     ET.SubElement(icon, "href").text = ICON_BY_ASSET_TYPE.get(
+    #         asset.asset_type,
+    #         "http://maps.google.com/mapfiles/kml/paddle/wht-circle.png",
+    #     )
+    #     return pm
+
+    # for asset in assets:
+    #     type_folder = type_folders.get(asset.asset_type)
+    #     if type_folder is None:
+    #         root_folder = make_folder(document, asset.get_asset_type_display())
+    #         type_folder = {
+    #             "root": root_folder,
+    #             "tracks": make_folder(root_folder, "Tracks"),
+    #             "positions": make_folder(root_folder, "Current Positions"),
+    #         }
+    #         type_folders[asset.asset_type] = type_folder
+
+    #     tracks_folder = make_folder(type_folder["tracks"], str(asset))
+    #     positions_folder = make_folder(type_folder["positions"], str(asset))
+
+    #     for beacon in asset.beacons.all():
+    #         pings = list(beacon.pings.all())
+    #         if not pings:
+    #             continue
+
+    #         coords = [
+    #             build_coords(ping.longitude, ping.latitude, ping.altitude)
+    #             for ping in pings
+    #         ]
+    #         has_altitude = any(p.altitude is not None for p in pings)
+
+    #         make_linestring(
+    #             tracks_folder,
+    #             beacon.identifier,
+    #             coords,
+    #             visibility=(
+    #                 asset.asset_type == tracking_constants.AssetType.BALLOON
+    #             ),
+    #             use_altitude=has_altitude,
+    #         )
+
+    #         make_point(positions_folder, beacon.identifier, coords[-1])

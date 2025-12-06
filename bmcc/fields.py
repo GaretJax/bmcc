@@ -196,6 +196,14 @@ class Coordinate(Point):
     lon = longitude
     abs_lon = abs_longitude
 
+    def __str__(self):
+        return f"{self.latitude:.5f},{self.longitude:.5f}"
+
+    def kml(self, altitude=None):
+        if altitude is None:
+            return f"{self.abs_longitude},{self.latitude}"
+        return f"{self.abs_longitude},{self.latitude},{altitude}"
+
 
 class CoordinateWidget(forms.MultiWidget):
     def __init__(self, attrs=None):

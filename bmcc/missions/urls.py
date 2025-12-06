@@ -62,7 +62,7 @@ urlpatterns = [
         views.LaunchSiteCreateView.as_view(),
         name="launch_site_create",
     ),
-    path("<uuid:mission_id>.kml", views.kml_entrypoint),
+    path("<uuid:mission_id>.kml", views.kml_entrypoint, name="kml_entrypoint"),
     path(
         "<uuid:mission_id>-update.kml", views.kml_update, name="updating_kml"
     ),

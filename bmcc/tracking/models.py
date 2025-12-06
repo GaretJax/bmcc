@@ -39,6 +39,14 @@ class Asset(models.Model):
     def __str__(self):
         return self.callsign or self.name
 
+    def __kml__(self):
+        from bmcc.utils.kml import E as kml
+
+        return kml.Folder(
+            kml.name(self.name),
+            *(b.__kml__() for b in self.beacons.all()),
+        )
+
     def clean(self):
         super().clean()
         if self.launch_site and self.launch_site.mission_id != self.mission_id:
@@ -75,6 +83,82 @@ class Beacon(models.Model):
 
     def __str__(self):
         return self.identifier
+
+    def __kml__(self):
+        from bmcc.utils.kml import E as kml
+
+        folder = kml.Folder(
+            kml.name(self.identifier),
+        )
+
+        pings = list(self.pings.order_by("reported_at").all())
+        if not pings:
+            return folder
+
+        last_ping = pings[-1]
+        coords = [f"{p.longitude},{p.latitude},{p.altitude}" for p in pings]
+
+        if (
+            self.asset.asset_type == constants.AssetType.BALLOON
+            and last_ping.altitude is not None
+        ):
+            point = kml.Point(
+                kml.altitudeMode("absolute"),
+                kml.coordinates(last_ping.position.kml(last_ping.altitude)),
+            )
+            track = kml.LineString(
+                kml.extrude("1"),
+                kml.tessellate("1"),
+                kml.altitudeMode("absolute"),
+                kml.coordinates(" ".join(coords)),
+            )
+            style = kml.Style(
+                kml.LineStyle(
+                    kml.color("7f800080"),
+                    kml.width("4"),
+                ),
+                kml.PolyStyle(
+                    kml.color("7f800080"),
+                ),
+            )
+        else:
+            point = kml.Point(
+                kml.altitudeMode("clampToGround"),
+                kml.coordinates(last_ping.position.kml()),
+            )
+            track = kml.LineString(
+                kml.altitudeMode("clampToGround"),
+                kml.coordinates(" ".join(coords)),
+            )
+            if self.asset.asset_type == constants.AssetType.BALLOON:
+                style = kml.Style(
+                    kml.LineStyle(
+                        kml.color("7f800080"),
+                        kml.width("4"),
+                    ),
+                    kml.PolyStyle(
+                        kml.color("7f800080"),
+                    ),
+                )
+            else:
+                style = kml.Style(
+                    kml.LineStyle(
+                        kml.color("ff000000"),
+                        kml.width("4"),
+                    ),
+                )
+
+        folder.append(
+            kml.Placemark(
+                kml.name(self.identifier),
+                point,
+            ),
+        )
+        folder.append(
+            kml.Placemark(kml.name("Track"), track, style),
+        )
+
+        return folder
 
     def last_ping(self):
         return self.pings.order_by("-reported_at").first()
@@ -127,11 +211,11 @@ class Ping(models.Model):
 
     @property
     def longitude(self):
-        return self.position.x
+        return self.position.longitude
 
     @property
     def latitude(self):
-        return self.position.y
+        return self.position.latitude
 
     def save(self, *args, **kwargs):
         if self.asset_id is None:
