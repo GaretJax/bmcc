@@ -1,17 +1,23 @@
 <div id="asset-data"
      hx-get="{{ request.path }}"
      hx-trigger="every 5s"
-     hx-swap="outerHTML">
+     hx-swap="outerHTML"
+     {% if last_ping_timestamp %}hx-vals='{"last_ping_timestamp": "{{ last_ping_timestamp.isoformat }}"}'{% endif %}>
     <div class="grid-x align-justify align-middle"
          style="margin-bottom: 0.75rem;">
         <div class="cell auto">
             <p class="muted">
-                Updated at
+                Last update
+                <strong>
+                    {{ last_ping_timestamp|date:"Y-m-d H:i:s" }}
+                </strong>
+                —
+                Last check
                 <strong data-role="updated-at">
                     {{ refreshed_at|date:"Y-m-d H:i:s" }}
                 </strong>
                 —
-                Next refresh in
+                Next check in
                 <strong data-role="refresh-countdown">5s</strong>
             </p>
         </div>
@@ -66,22 +72,52 @@
         (function () {
             var container = document.currentScript.closest("#asset-data");
             if (!container) { return; }
+            if (container.dataset.initialized === "1") { return; }
+            container.dataset.initialized = "1";
             var statusEl = container.querySelector(
                 "[data-role='refresh-status']"
             );
             var countdownEl = container.querySelector(
                 "[data-role='refresh-countdown']"
             );
+            var updatedEl = container.querySelector(
+                "[data-role='updated-at']"
+            );
             var intervalSeconds = 5;
+            var timerId = null;
+
+            function formatNow() {
+                var now = new Date();
+                function pad(n) { return String(n).padStart(2, "0"); }
+                return (
+                    now.getFullYear()
+                    + "-"
+                    + pad(now.getMonth() + 1)
+                    + "-"
+                    + pad(now.getDate())
+                    + " "
+                    + pad(now.getHours())
+                    + ":"
+                    + pad(now.getMinutes())
+                    + ":"
+                    + pad(now.getSeconds())
+                );
+            }
 
             function startCountdown() {
+                if (timerId) { clearInterval(timerId); }
                 var remaining = intervalSeconds;
                 countdownEl.textContent = remaining + "s";
-                var timer = setInterval(function () {
+                timerId = setInterval(function () {
+                    if (window.refreshPaused) {
+                        countdownEl.textContent = "paused";
+                        return;
+                    }
                     remaining -= 1;
                     if (remaining <= 0) {
                         countdownEl.textContent = "0s";
-                        clearInterval(timer);
+                        clearInterval(timerId);
+                        timerId = null;
                     } else {
                         countdownEl.textContent = remaining + "s";
                     }
@@ -95,6 +131,23 @@
             });
             container.addEventListener("htmx:afterSwap", function () {
                 if (statusEl) { statusEl.textContent = ""; }
+                if (updatedEl) { updatedEl.textContent = formatNow(); }
+                startCountdown();
+            });
+            container.addEventListener("htmx:afterRequest", function (evt) {
+                var xhr = evt.detail && evt.detail.xhr;
+                if (xhr && xhr.status === 204) {
+                    if (updatedEl) { updatedEl.textContent = formatNow(); }
+                    startCountdown();
+                    if (statusEl) {
+                        statusEl.textContent = "No change";
+                        setTimeout(function () {
+                            if (statusEl.textContent === "No change") {
+                                statusEl.textContent = "";
+                            }
+                        }, 1200);
+                    }
+                }
             });
         }());
     </script>

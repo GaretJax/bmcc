@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db.models import OuterRef, Prefetch, Subquery
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
@@ -94,19 +96,40 @@ class MissionAssetListView(ListView):
                 last_ping_beacon=Subquery(
                     latest_ping.values("beacon__identifier")[:1]
                 ),
+                last_ping_id=Subquery(latest_ping.values("id")[:1]),
             )
             .order_by("name")
         )
 
     def get_context_data(self, **kwargs):
-        kwargs["mission"] = self.mission
-        kwargs["refreshed_at"] = timezone.now()
-        return super().get_context_data(**kwargs)
+        context = {
+            "mission": self.mission,
+            "refreshed_at": timezone.now(),
+            **super().get_context_data(**kwargs),
+        }
+        context["last_ping_timestamp"] = (
+            max(a.last_ping_reported_at for a in context["object_list"])
+            if context["object_list"]
+            else None
+        )
+        return context
 
     def get_template_names(self):
         if getattr(self.request, "htmx", False):
             return ["tracking/partials/assets_table.html"]
         return [self.template_name]
+
+    def render_to_response(self, context, **response_kwargs):
+        if getattr(self.request, "htmx", False):
+            client_last = self.request.POST.get(
+                "last_ping_timestamp"
+            ) or self.request.GET.get("last_ping_timestamp")
+            server_last = context["last_ping_timestamp"]
+            if client_last and server_last:
+                client_last = datetime.fromisoformat(client_last)
+                if client_last == server_last:
+                    return HttpResponse(status=204)
+        return super().render_to_response(context, **response_kwargs)
 
 
 class AssetDetailView(DetailView):
