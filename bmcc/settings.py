@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "django_object_actions",
     "import_export",
     "admin_auto_filters",
+    "django_htmx",
     # Custom apps
     "bmcc.celery.apps.DefaultConfig",
     "bmcc.predictions",
@@ -68,6 +69,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.locale.LocaleMiddleware",
+    "django_htmx.middleware.HtmxMiddleware",
 ]
 
 ROOT_URLCONF = "bmcc.urls"

@@ -1,0 +1,16 @@
+{% extends "missions/base.html" %}
+
+{% block title %}Assets{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="grid-x align-justify align-middle" style="margin-bottom: 0.75rem;">
+        <div class="cell auto">
+            <h2 class="h4">Assets</h2>
+            <p class="muted">Latest pings for each asset</p>
+        </div>
+        <span class="label secondary">{{ mission.name }}</span>
+    </div>
+    {% include "tracking/partials/assets_table.html" %}
+</div>
+{% endblock %}

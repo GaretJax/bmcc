@@ -9,6 +9,11 @@ urlpatterns = [
     path(
         "<uuid:mission_id>/", views.MissionDetailView.as_view(), name="detail"
     ),
+    path(
+        "<uuid:mission_id>/assets/",
+        views.MissionAssetListView.as_view(),
+        name="asset_list",
+    ),
     path("<uuid:mission_id>.kml", views.kml_entrypoint),
     path(
         "<uuid:mission_id>-update.kml", views.kml_update, name="updating_kml"

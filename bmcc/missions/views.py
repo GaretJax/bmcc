@@ -1,7 +1,8 @@
-from django.db.models import Prefetch
+from django.db.models import OuterRef, Prefetch, Subquery
 from django.http import HttpResponse
 from django.urls import reverse
-from django.views.generic import DetailView
+from django.utils import timezone
+from django.views.generic import DetailView, ListView
 
 import simplekml
 
@@ -57,6 +58,47 @@ class MissionDetailView(DetailView):
             }
         )
         return super().get_context_data(**kwargs)
+
+
+class MissionAssetListView(ListView):
+    model = Asset
+    template_name = "tracking/assets_list.html"
+    context_object_name = "assets"
+
+    def get_queryset(self):
+        self.mission = models.Mission.objects.get(pk=self.kwargs["mission_id"])
+        latest_ping = Ping.objects.filter(asset=OuterRef("pk")).order_by(
+            "-reported_at", "-created_at"
+        )
+        return (
+            Asset.objects.filter(mission=self.mission)
+            .select_related("mission")
+            .annotate(
+                last_ping_reported_at=Subquery(
+                    latest_ping.values("reported_at")[:1]
+                ),
+                last_ping_position=Subquery(
+                    latest_ping.values("position")[:1]
+                ),
+                last_ping_altitude=Subquery(
+                    latest_ping.values("altitude")[:1]
+                ),
+                last_ping_beacon=Subquery(
+                    latest_ping.values("beacon__identifier")[:1]
+                ),
+            )
+            .order_by("name")
+        )
+
+    def get_context_data(self, **kwargs):
+        kwargs["mission"] = self.mission
+        kwargs["refreshed_at"] = timezone.now()
+        return super().get_context_data(**kwargs)
+
+    def get_template_names(self):
+        if getattr(self.request, "htmx", False):
+            return ["tracking/partials/assets_table.html"]
+        return [self.template_name]
 
 
 def kml_entrypoint(request, mission_id):

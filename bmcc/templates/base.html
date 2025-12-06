@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% load django_htmx %}<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -6,6 +6,7 @@
     <title>{% block title %}Ballooning Mission Control{% endblock %}</title>
     <link rel="stylesheet"
         href="//unpkg.com/foundation-sites/dist/css/foundation.min.css">
+    {% htmx_script %}
     <style>
         :root { --topbar-height: 72px; }
         body { background: #f6f8fb; margin: 0; overflow-x: hidden; }
@@ -67,7 +68,7 @@
     </style>
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
     <div class="topbar">
         <div>
             <p class="title">
@@ -91,9 +92,15 @@
                 </li>
                 {% if nav_mission %}
 {% url 'tracking:owntracks_register' pk=nav_mission.pk as owntracks_register %}
+{% url 'missions:asset_list' mission_id=nav_mission.pk as mission_assets_url %}
                     <li>
                         <a href="{{ nav_mission.get_absolute_url }}">
                             Mission overview
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ mission_assets_url }}">
+                            Assets
                         </a>
                     </li>
                     <li>

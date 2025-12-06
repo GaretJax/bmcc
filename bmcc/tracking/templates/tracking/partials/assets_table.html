@@ -1,0 +1,104 @@
+<div id="asset-data"
+     hx-get="{{ request.path }}"
+     hx-trigger="every 5s"
+     hx-swap="outerHTML">
+    <div class="grid-x align-justify align-middle"
+         style="margin-bottom: 0.75rem;">
+        <div class="cell auto">
+            <p class="muted">
+                Updated at
+                <strong data-role="updated-at">
+                    {{ refreshed_at|date:"Y-m-d H:i:s" }}
+                </strong>
+                —
+                Next refresh in
+                <strong data-role="refresh-countdown">5s</strong>
+            </p>
+        </div>
+        <div class="cell shrink">
+            <span class="label secondary" data-role="refresh-status"></span>
+        </div>
+    </div>
+    <table class="stack">
+        <thead>
+            <tr>
+                <th>Asset</th>
+                <th>Beacon</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>Altitude</th>
+                <th>Reported at</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asset in assets %}
+                <tr>
+                    <td>{{ asset.name }}</td>
+                    <td>{{ asset.last_ping_beacon|default:"—" }}</td>
+                    <td>
+                        {% if asset.last_ping_position %}
+                            {{ asset.last_ping_position.y|floatformat:5 }}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if asset.last_ping_position %}
+                            {{ asset.last_ping_position.x|floatformat:5 }}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if asset.last_ping_altitude %}
+                            {{ asset.last_ping_altitude }} m
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if asset.last_ping_reported_at %}
+                            {{ asset.last_ping_reported_at|date:"Y-m-d H:i" }}
+                        {% else %}No pings{% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center muted">
+                        No assets available.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <script>
+        (function () {
+            var container = document.currentScript.closest("#asset-data");
+            if (!container) { return; }
+            var statusEl = container.querySelector(
+                "[data-role='refresh-status']"
+            );
+            var countdownEl = container.querySelector(
+                "[data-role='refresh-countdown']"
+            );
+            var intervalSeconds = 5;
+
+            function startCountdown() {
+                var remaining = intervalSeconds;
+                countdownEl.textContent = remaining + "s";
+                var timer = setInterval(function () {
+                    remaining -= 1;
+                    if (remaining <= 0) {
+                        countdownEl.textContent = "0s";
+                        clearInterval(timer);
+                    } else {
+                        countdownEl.textContent = remaining + "s";
+                    }
+                }, 1000);
+            }
+
+            startCountdown();
+
+            container.addEventListener("htmx:beforeRequest", function () {
+                if (statusEl) { statusEl.textContent = "Updating..."; }
+            });
+            container.addEventListener("htmx:afterSwap", function () {
+                if (statusEl) { statusEl.textContent = ""; }
+            });
+        }());
+    </script>
+</div>
