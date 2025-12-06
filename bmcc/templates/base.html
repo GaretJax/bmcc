@@ -4,25 +4,125 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Ballooning Mission Control{% endblock %}</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/foundation-sites@6.8.1/dist/css/foundation.min.css">
+    <link rel="stylesheet"
+        href="//unpkg.com/foundation-sites/dist/css/foundation.min.css">
     <style>
-        body { background: #f6f8fb; }
-        .page-shell { max-width: 1100px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+        :root { --topbar-height: 72px; }
+        body { background: #f6f8fb; margin: 0; }
+        .topbar {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            align-items: center;
+            background: #0a2140;
+            color: #e7edf5;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--topbar-height);
+            z-index: 10;
+        }
+        .topbar .title { font-size: 1.1rem; margin: 0; }
+        .topbar .nav-right { justify-self: end; color: #cfd8e3; }
+        .app-shell {
+            margin-top: var(--topbar-height);
+            min-height: calc(100vh - var(--topbar-height));
+            display: grid;
+            grid-template-columns: 240px 1fr;
+        }
+        .sidebar-panel {
+            background: #0d274a;
+            color: #e7edf5;
+            padding: 1.5rem 1.25rem;
+            position: sticky;
+            top: var(--topbar-height);
+            height: calc(100vh - var(--topbar-height));
+        }
+        .sidebar-panel a { color: #e7edf5; }
+        .sidebar-panel .menu a.disabled { color: #8fa3bf; }
+        .sidebar-panel .menu-text { color: #8fa3bf; font-size: 0.85rem; }
+        .content-area {
+            padding: 2rem 2rem 3rem;
+        }
+        .page-shell {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
         .header { margin-bottom: 1.5rem; }
         .header h1 { margin-bottom: 0.25rem; }
-        .card { background: #fff; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); padding: 1.25rem; border: 1px solid #e6e8eb; }
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            padding: 1.25rem;
+            border: 1px solid #e6e8eb;
+        }
         .muted { color: #5c6c7c; }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <div class="page-shell">
-        <header class="header">
-            {% block header %}{% endblock %}
-        </header>
-        <main>
-            {% block content %}{% endblock %}
-        </main>
+    <div class="topbar">
+        <div>
+            <p class="title">
+                {% if mission %}
+                    {{ mission.name }}
+                {% else %}
+                    Ballooning Mission Control
+                {% endif %}
+            </p>
+        </div>
+        <div class="nav-right">
+            {% block topbar_right %}{% endblock %}
+        </div>
+    </div>
+    <div class="app-shell">
+        <aside class="sidebar-panel">
+            {% with mission as nav_mission %}
+            <ul class="vertical menu">
+                <li>
+                    <span class="menu-text">Navigation</span>
+                </li>
+                {% if nav_mission %}
+{% url 'tracking:owntracks_register' pk=nav_mission.pk as owntracks_register %}
+                    <li>
+                        <a href="{{ nav_mission.get_absolute_url }}">
+                            Mission overview
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ owntracks_register }}">
+                            Register OwnTracks device
+                        </a>
+                    </li>
+                {% else %}
+                    <li>
+                        <a aria-disabled="true" class="disabled">
+                            Mission overview
+                        </a>
+                    </li>
+                    <li>
+                        <a aria-disabled="true" class="disabled">
+                            Register OwnTracks device
+                        </a>
+                    </li>
+                {% endif %}
+                {% block sidebar_menu_extra %}{% endblock %}
+            </ul>
+            {% endwith %}
+        </aside>
+        <div class="content-area">
+            <div class="page-shell">
+                <header class="header">
+                    {% block header %}{% endblock %}
+                </header>
+                <main>
+                    {% block content %}{% endblock %}
+                </main>
+            </div>
+        </div>
     </div>
     {% block extra_body %}{% endblock %}
 </body>

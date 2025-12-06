@@ -152,6 +152,7 @@ class OwnTracksConfigurationView(DetailView):
                 "config_json": config_json,
                 "config_url": config_url,
                 "owntracks_url": owntracks_url,
+                "mission": self.object.asset.mission,
             }
         )
         return context

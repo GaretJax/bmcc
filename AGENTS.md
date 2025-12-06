@@ -20,6 +20,7 @@
 - Import order enforced by isort sections defined in `pyproject.toml` (`DJANGO`, `FIRSTPARTY`, `PROJECT`, etc.).
 - Django apps, modules, and files use `snake_case`; management commands and Celery tasks follow the same.
 - Prefer explicit imports; add docstrings to new public functions/classes; keep settings/env usage centralized in `bmcc/settings.py`.
+- Run `make lint` at to automatically lint python files.
 
 ## Testing Guidelines
 - Test runner: pytest with pytest-django; coverage configuration lives in `pyproject.toml` and writes to `/artifacts/coverage`.

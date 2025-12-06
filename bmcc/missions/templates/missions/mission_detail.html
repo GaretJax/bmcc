@@ -7,15 +7,11 @@
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="grid-x align-middle align-justify">
-        <div class="cell shrink">
-            <h1 class="h3">{{ mission.name }}</h1>
-            <p class="muted">
-                {{ mission.description|default:"No description provided for this mission." }}
-            </p>
-        </div>
-        <span class="label secondary">Mission</span>
+<div class="grid-x grid-margin-x">
+    <div class="cell">
+        <p class="muted">
+            {{ mission.description|default:"No description provided for this mission." }}
+        </p>
     </div>
 </div>
 
