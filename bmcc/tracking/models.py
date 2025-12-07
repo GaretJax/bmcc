@@ -96,7 +96,7 @@ class Beacon(models.Model):
             return folder
 
         last_ping = pings[-1]
-        coords = [f"{p.longitude},{p.latitude},{p.altitude}" for p in pings]
+        coords = [p.position.kml(p.altitude) for p in pings]
 
         visible = False
         if (
@@ -126,7 +126,6 @@ class Beacon(models.Model):
                 ),
             )
             visible = True
-        #     ET.SubElement(pm, "visibility").text = "1" if visibility else "0"
         else:
             point = kml.Point(
                 kml.altitudeMode("clampToGround"),

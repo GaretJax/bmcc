@@ -201,8 +201,8 @@ class Coordinate(Point):
 
     def kml(self, altitude=None):
         if altitude is None:
-            return f"{self.abs_longitude},{self.latitude}"
-        return f"{self.abs_longitude},{self.latitude},{altitude}"
+            return f"{self.longitude:.6f},{self.latitude:.6f}"
+        return f"{self.longitude:.6f},{self.latitude:.6f},{altitude}"
 
 
 class CoordinateWidget(forms.MultiWidget):
