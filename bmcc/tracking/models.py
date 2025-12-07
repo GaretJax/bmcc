@@ -98,6 +98,7 @@ class Beacon(models.Model):
         last_ping = pings[-1]
         coords = [f"{p.longitude},{p.latitude},{p.altitude}" for p in pings]
 
+        visible = False
         if (
             self.asset.asset_type == constants.AssetType.BALLOON
             and last_ping.altitude is not None
@@ -105,6 +106,9 @@ class Beacon(models.Model):
             point = kml.Point(
                 kml.altitudeMode("absolute"),
                 kml.coordinates(last_ping.position.kml(last_ping.altitude)),
+            )
+            icon = (
+                "http://maps.google.com/mapfiles/kml/paddle/purple-blank.png"
             )
             track = kml.LineString(
                 kml.extrude("1"),
@@ -121,6 +125,8 @@ class Beacon(models.Model):
                     kml.color("7f800080"),
                 ),
             )
+            visible = True
+        #     ET.SubElement(pm, "visibility").text = "1" if visibility else "0"
         else:
             point = kml.Point(
                 kml.altitudeMode("clampToGround"),
@@ -140,6 +146,8 @@ class Beacon(models.Model):
                         kml.color("7f800080"),
                     ),
                 )
+                icon = "http://maps.google.com/mapfiles/kml/paddle/purple-blank.png"
+                visible = True
             else:
                 style = kml.Style(
                     kml.LineStyle(
@@ -147,15 +155,28 @@ class Beacon(models.Model):
                         kml.width("4"),
                     ),
                 )
+                icon = "http://maps.google.com/mapfiles/kml/shapes/woman.png"
 
         folder.append(
             kml.Placemark(
                 kml.name(self.identifier),
                 point,
+                kml.Style(
+                    kml.IconStyle(
+                        kml.Icon(
+                            kml.href(icon),
+                        )
+                    )
+                ),
             ),
         )
         folder.append(
-            kml.Placemark(kml.name("Track"), track, style),
+            kml.Placemark(
+                kml.name("Track"),
+                track,
+                style,
+                kml.visibility("1" if visible else "0"),
+            ),
         )
 
         return folder
