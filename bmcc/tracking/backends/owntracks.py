@@ -3,6 +3,7 @@ from urllib.parse import urljoin
 
 from django.conf import settings
 from django.urls import reverse
+from django.utils import timezone
 
 import attrs
 
@@ -29,8 +30,19 @@ class OwnTracksBackend:
             metadata=data,
         )
 
+        pending = list(
+            self.beacon.owntracks_messages.filter(sent_at__isnull=True)
+        )
+        now = timezone.now()
+        outbound = []
+        if pending:
+            for msg in pending:
+                outbound.append(msg.message)
+                msg.sent_at = now
+            models.OwnTracksMessage.objects.bulk_update(pending, ["sent_at"])
+
         if not self.show_all:
-            return ping, []
+            return ping, outbound
 
         friends = (
             models.Beacon.objects.active()
@@ -41,7 +53,8 @@ class OwnTracksBackend:
             .exclude(pk=self.beacon.pk)
         )
         return ping, (
-            [
+            outbound
+            + [
                 {"_type": "cmd", "action": "clearWaypoints"},
             ]
             + [self.prepare_card_message(beacon) for beacon in friends]

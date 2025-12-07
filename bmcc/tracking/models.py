@@ -243,3 +243,19 @@ class Ping(models.Model):
         if self.mission_id is None:
             self.mission = self.asset.mission
         super().save(*args, **kwargs)
+
+
+class OwnTracksMessage(models.Model):
+    id = UUIDAutoField()
+    beacon = models.ForeignKey(
+        Beacon, related_name="owntracks_messages", on_delete=models.CASCADE
+    )
+    message = models.JSONField()
+    sent_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Message for {self.beacon} ({'sent' if self.sent_at else 'pending'})"

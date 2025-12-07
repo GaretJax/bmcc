@@ -123,3 +123,9 @@ class PingAdmin(ExportMixin, ModelAdmin):
     formfield_overrides = {
         CoordinateField: {"form_class": CoordinateFormField}
     }
+
+
+@admin.register(models.OwnTracksMessage)
+class OwnTracksMessageAdmin(ModelAdmin):
+    list_display = ["beacon", "sent_at", "created_at"]
+    list_filter = ["beacon", "sent_at"]
