@@ -83,6 +83,11 @@ class Prediction(models.Model):
             ),
             kml.Placemark(
                 kml.name("Landing"),
+                kml.description(
+                    f"Landing at {self.landing_location}, "
+                    f"{self.landing_altitude:.0f}m, "
+                    f"at {self.landing_at.isoformat()}"
+                ),
                 kml.Point(
                     kml.altitudeMode("absolute"),
                     kml.coordinates(
